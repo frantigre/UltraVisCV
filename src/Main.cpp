@@ -294,24 +294,25 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
         cv::Rect curBBox = bboxes[i];
         if (curBBox.width > maxUpperWidth) maxUpperWidth = curBBox.width;
 
-        cv::Rect fullROI = curBBox & cv::Rect(0, 0, flow.cols, flow.rows);
-        if (fullROI.area() > 0) {
-            for (int r = fullROI.y; r < fullROI.y + fullROI.height; ++r) {
-                for (int c = fullROI.x; c < fullROI.x + fullROI.width; ++c) {
-                    cv::Point2f f = flow.at<cv::Point2f>(r, c);
-                    float m = std::hypot(f.x, f.y);
-                    if (m > 0.5f) wholeBodyKineticEnergies.push_back(m);
-                }
-            }
-        }
+        // 1. Define a 10% padding margin based on the current box size
+        int padX = static_cast<int>(curBBox.width * 0.10);
+        int padY = static_cast<int>(curBBox.height * 0.10);
 
-        // Upper 32% Bounding Area
-        cv::Rect overheadROI(curBBox.x, curBBox.y, curBBox.width, static_cast<int>(curBBox.height * 0.32));
+        // 2. Create the expanded box and safely keep it inside the image boundaries
+        cv::Rect paddedBBox(curBBox.x - padX, curBBox.y - padY, 
+                            curBBox.width + 2 * padX, curBBox.height + 2 * padY);
+        paddedBBox &= cv::Rect(0, 0, flow.cols, flow.rows);
+
+        // 3. Use paddedBBox for all your flow extractions instead of curBBox
+        cv::Rect fullROI = paddedBBox; 
+
+        // Upper 32% Bounding Area (using padded dimensions)
+        cv::Rect overheadROI(paddedBBox.x, paddedBBox.y, paddedBBox.width, static_cast<int>(paddedBBox.height * 0.32));
         overheadROI &= cv::Rect(0, 0, flow.cols, flow.rows);
 
-        // Mid-Torso 35% Bounding Area
-        cv::Rect chestROI(curBBox.x, curBBox.y + static_cast<int>(curBBox.height * 0.28),
-                          curBBox.width, static_cast<int>(curBBox.height * 0.35));
+        // Mid-Torso 35% Bounding Area (using padded dimensions)
+        cv::Rect chestROI(paddedBBox.x, paddedBBox.y + static_cast<int>(paddedBBox.height * 0.28),
+                        paddedBBox.width, static_cast<int>(paddedBBox.height * 0.35));
         chestROI &= cv::Rect(0, 0, flow.cols, flow.rows);
 
         if (overheadROI.area() > 0) {
@@ -522,18 +523,12 @@ int main(int argc, char** argv) {
         }
     }
 
-    int N = static_cast<int>(samples.size());
-    if (N < 6) {
-        std::cerr << "Insufficient sequences found for training/evaluation.\n";
-        std::cout.rdbuf(origCoutBuf);
-        return -1;
-    }
-
     int numFeats = static_cast<int>(samples[0].features.size());
     int correct = 0;
     double totalIoU = 0.0;
     int confusionMatrix[7][7] = {0};
-
+    
+    int N = static_cast<int>(samples.size());
     // Leave-One-Out Cross-Validation (LOOCV)
     for (int i = 0; i < N; ++i) {
         std::vector<float> mean(numFeats, 0.0f);
@@ -591,14 +586,14 @@ int main(int argc, char** argv) {
         bool isLocomotionPrediction = (pred == WALKING || pred == JOGGING || pred == RUNNING);
 
         // Guardrail 1: Moving actors cannot be classified as stationary
-        if (netTraverse > 0.35f && isStationaryPrediction) {
+        /*if (netTraverse > 0.35f && isStationaryPrediction) {
             pred = WALKING;
         }
         // Guardrail 2: Stationary actors cannot be classified as locomotion
         if (netTraverse < 0.12f && isLocomotionPrediction) {
             // Re-route back to dominant stationary prediction
             pred = (samples[i].features[7] > 0.02f) ? HANDWAVING : HANDCLAPPING;
-        }
+        }*/
 
         samples[i].predictedLabel = pred;
         int trueLabel = samples[i].trueLabel;
