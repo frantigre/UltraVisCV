@@ -10,5 +10,6 @@ add_executable(${PROJECT_NAME}
         src/FileManagement.cpp
         src/testHOGdiff.cpp
         src/DataStructures.cpp
-        src/Performance.cpp)
+        src/Performance.cpp
+		src/FeatureExtractor.cpp)
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
