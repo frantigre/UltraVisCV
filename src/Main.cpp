@@ -178,8 +178,8 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
         
         cv::Rect curBox(0,0,0,0), secBox(0,0,0,0);   //current BEST Box = best box found so far for this frame
         //cv::Point2f curCent,secCent;
-        double bestScore = 0,secBest=0; //for "new part"
-        //double bestScore = 1e9;
+        double bestScoreB = 0,secBest=0; //for "new part"
+        //double bestScoreB = 1e9;
         for (size_t j=0; j<mContours.size(); j++) {
             double area = cv::contourArea(mContours[j]);
             //curCent.x=mContours[j].x + mContours[j].width / 2.0f;
@@ -206,11 +206,11 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
                 //double score = (area+proximityX*proxXFactor+proximityY*proxYFactor)*simFactor*ARFactor;
                 //if(i==19) std::cout<<"proximity "<<proxXFactor*proxYFactor<<"  similarity "<<simFactor<<"  ARFactor "<<ARFactor<<std::endl;
                 double score = (0.4*area/static_cast<double>(imgW*imgH)+0.6*proxXFactor*proxYFactor)*simFactor*ARFactor;
-                if(score > bestScore){
-                    secBest=bestScore;
+                if(score > bestScoreB){
+                    secBest=bestScoreB;
                     secBox=curBox;
                     
-                    bestScore=score;
+                    bestScoreB=score;
                     curBox=proposal;
                 }
                 else if(score > secBest){
@@ -222,27 +222,67 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
                 cv::Rect tmp = cv::boundingRect(mContours[j]);
                 float ar = static_cast<float>(tmp.width) / tmp.height;
                 double score = std::abs(ar - 0.42f) * 100.0 - std::min(area, 3000.0) * 0.05; //da rivedere questo score sia per le proporzioni che per l'area
-                if (score < bestScore) {
-                    bestScore = score;
+                if (score < bestScoreB) {
+                    bestScoreB = score;
                     curBox = tmp;
                 }*/
             }
         }
-
-        cv::Mat debug;
+        
+        if(bestScoreB*0.6<=secBest){
+            curBox=curBox|secBox;
+        }
+        
+        //laplacian part
+        cv::Mat smooth,edges;
+        cv::GaussianBlur(grays[i], smooth, cv::Size(5,5), 0);
+        cv::Laplacian(smooth, edges, CV_16S, 3);
+        cv::convertScaleAbs(edges,edges);
+        cv::threshold(edges,edges,30,255,cv::THRESH_BINARY);
+        cv::morphologyEx(edges,edges,cv::MORPH_CLOSE,cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 5)));
+        cv::Mat hNoise=edges.clone();
+        cv::morphologyEx(hNoise,hNoise,cv::MORPH_CLOSE,cv::getStructuringElement(cv::MORPH_RECT, cv::Size(7,5)));
+        cv::morphologyEx(hNoise,hNoise,cv::MORPH_OPEN,cv::getStructuringElement(cv::MORPH_RECT, cv::Size(static_cast<int>(imgW*0.4), 1)));
+        edges.setTo(0,hNoise);
+        std::vector<std::vector<cv::Point>> lContours;
+        cv::findContours(edges, lContours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+        
+        cv::Rect curEdge(0,0,0,0);
+        double bestScoreE=0;
+        //std::cout<<lContours.size()<<" position "<<i<<std::endl;
+        for (size_t j=0; j<lContours.size(); j++) {
+            double area = cv::contourArea(lContours[j]);
+            if(area>15){
+                cv::Rect proposal = cv::boundingRect(lContours[j]);
+                double proximity=std::sqrt(std::pow((proposal.x+proposal.width/2.0f)-(curBox.x+curBox.width/2.0f),2)+
+                                           std::pow((proposal.y+proposal.height/2.0f)-(curBox.y+curBox.height/2.0f),2));
+                double score=0.85*area/static_cast<double>(imgW*imgH)+0.15*Gaussian(proximity,0,0,20,60);
+                //std::cout<<"loop infinito"<<std::endl;
+                if(score > bestScoreE){                    
+                    bestScoreE=score;
+                    curEdge=proposal;
+                }                     
+            }
+        }
+        curBox=curBox|curEdge;
+        
+        /*cv::Mat debug;
         cv::cvtColor(grays[i], debug, cv::COLOR_GRAY2BGR);
-        /*if(i==19){
-            std::cout<<"\ncontours found "<<mContours.size()<<"\n";
+        if(i==19){
+            /*std::cout<<"\ncontours found "<<mContours.size()<<"\n";
             cv::rectangle(debug, secBox, cv::Scalar(255,0,0),2);
             cv::rectangle(debug, curBox, cv::Scalar(0,0,255),2);
             cv::rectangle(debug, curBox|secBox, cv::Scalar(0,255,0),2);
             std::cout<<"best "<<bestScore<<" second "<<secBest<<"\n\n"<<std::endl;
-            cv::imshow("squares", debug);
-            cv::waitKey(0);
+            cv::imshow("squares", debug);*/
+            //cv::imshow("laplac",edges);
+            //cv::imshow("horiz",hNoise);
+            /*cv::rectangle(debug, curBox, cv::Scalar(0,0,255),2);
+            cv::rectangle(debug, curEdge, cv::Scalar(255,0,0),2);
+            cv::imshow("two boxes", debug);
+            //cv::waitKey(0);
         }*/
-        if(bestScore*0.6<=secBest){
-            curBox = curBox|secBox;
-        }
+        
         if (curBox.area()>0) {
             
             /*cv::Rect safeBox = curBox & cv::Rect(0, 0, imgW, imgH); 

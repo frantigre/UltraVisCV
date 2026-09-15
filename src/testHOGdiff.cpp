@@ -114,9 +114,9 @@ cv::Mat computeTemporalEnergy(std::vector<cv::Mat> video) {
 
 double Gaussian(double x, double a, double b, double c, double d){
     double t;
-    if (a>=b || b>c || c>=d) throw std::invalid_argument("Invalid values for generating Plateau");
-    if (x<=a || x>=d) return 0;
+    if (a>b || b>c || c>d) throw std::invalid_argument("Invalid values for generating Plateau");
     if (x>=b && x<=c) return 1;
+    if (x<=a || x>=d) return 0;
     if (x>a && x<b) t=(b-x)/(b-a);
     if (x>c && x<d) t=(x-c)/(d-c);
     return std::exp(-3*(std::pow(t,3)));
