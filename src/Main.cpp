@@ -11,6 +11,8 @@
 #include <algorithm>
 #include "SequenceSample.h"
 #include "FeatureExtractor.h"
+#include "testHOGdiff.h"
+
 
 namespace fs = std::filesystem;
 
@@ -71,34 +73,6 @@ bool loadGroundTruth(const std::string& path, GroundTruth& gt) {
     return true;
 }
 
-cv::Mat computeTemporalEnergy(const std::vector<cv::Mat>& grays) {
-    int rows = grays[0].rows;
-    int cols = grays[0].cols;
-    int n = static_cast<int>(grays.size());
-
-    cv::Mat meanImg(rows, cols, CV_32F, cv::Scalar(0));
-    for (const auto& g : grays) {
-        cv::Mat f;
-        g.convertTo(f, CV_32F);
-        meanImg += f;
-    }
-    meanImg /= static_cast<float>(n);
-
-    cv::Mat varImg(rows, cols, CV_32F, cv::Scalar(0));
-    for (const auto& g : grays) {
-        cv::Mat f, diff;
-        g.convertTo(f, CV_32F);
-        diff = f - meanImg;
-        varImg += diff.mul(diff);
-    }
-    varImg /= static_cast<float>(n);
-
-    cv::Mat stdImg;
-    cv::sqrt(varImg, stdImg);
-    cv::Mat energy8U;
-    stdImg.convertTo(energy8U, CV_8U);
-    return energy8U;
-}
 
 bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
     sample.seqName = seqDir.filename().string();
@@ -143,122 +117,190 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
         cv::Mat bgr = cv::imread(framePaths[i]);
         cv::cvtColor(bgr, grays[i], cv::COLOR_BGR2GRAY);
     }
-
+    
+    //std::cout<<"NEW PART"<<std::endl;
+    
     int imgW = grays[0].cols;
     int imgH = grays[0].rows;
 
     cv::Mat energy = computeTemporalEnergy(grays);
     cv::Mat energyMask;
-    cv::threshold(energy, energyMask, 8, 255, cv::THRESH_BINARY);
-    cv::morphologyEx(energyMask, energyMask, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(9, 21)));
+    //cv::threshold(energy, energyMask, 8, 255, cv::THRESH_BINARY);
+    cv::threshold(energy, energyMask, 4, 255, cv::THRESH_BINARY);
+    cv::morphologyEx(energyMask, energyMask, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(9, 21))); //trova l'area in cui la persona è passata
 
     std::vector<std::vector<cv::Point>> eContours;
     cv::findContours(energyMask, eContours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-    cv::Rect globalActorZone(0, 0, imgW, imgH);
+    //trova i contours = i bordi tra la zona in cui è passata la persona e dove non è passata
+
+    cv::Rect personZoneVideo(0, 0, imgW, imgH);
     double maxEArea = 0;
-    for (const auto& c : eContours) {
-        cv::Rect r = cv::boundingRect(c);
-        float ar = static_cast<float>(r.width) / r.height;
-        if (r.area() > maxEArea && r.area() > 250 && ar < 2.2f) {
-            maxEArea = r.area();
-            globalActorZone = r;
+    
+    
+    for (size_t i=0; i<eContours.size(); i++) {
+        cv::Rect tmp = cv::boundingRect(eContours[i]);
+        //float ar = static_cast<float>(r.width) / r.height;
+        if (tmp.area() > maxEArea && tmp.area() > 100) {  //prende il contour più grosso, probabilmente va tolto ar perchè se la persona corre l'area è più larga che alta
+            maxEArea = tmp.area();                                   //forse anche abbassare 250
+            personZoneVideo = tmp;
         }
     }
 
     std::vector<cv::Rect> bboxes;
     std::vector<cv::Point2f> centroids;
-    std::vector<float> aspectRatios;
-    std::vector<float> widths;
     std::vector<float> actorHeights;
-    std::vector<float> motionDensities;
+    
+    //std::cout<<"PER FRAME"<<std::endl;
 
-    for (int i = 0; i < nFrames; ++i) {
-        int prevIdx = std::max(0, i - 1);
-        int nextIdx = std::min(nFrames - 1, i + 1);
-
-        cv::Mat diff1, diff2, motionMask;
-        cv::absdiff(grays[i], grays[prevIdx], diff1);
-        cv::absdiff(grays[i], grays[nextIdx], diff2);
-        cv::bitwise_and(diff1, diff2, motionMask);
-        cv::threshold(motionMask, motionMask, 10, 255, cv::THRESH_BINARY);
+    for (size_t i=0; i<grays.size(); i++) {
+        int prevI = std::max(0,static_cast<int>(i)-1);
+        int succI = std::min(grays.size()-1, i+1);
+        cv::Mat diff1=difference(grays[i],grays[prevI]);
+        cv::threshold(diff1, diff1, 10, 255, cv::THRESH_BINARY); //could be changed 10 since it's already in difference
+        cv::Mat diff2=difference(grays[i],grays[succI]);
+        cv::threshold(diff2, diff2, 10, 255, cv::THRESH_BINARY); // "
+        cv::Mat motionMask;
+        cv::bitwise_and(diff1,diff2,motionMask);
+        /*
+        cv::Mat diff1,diff2,motionMask;
+        cv::absdiff(grays[i], grays[prevI], diff1);
+        cv::absdiff(grays[i], grays[succI], diff2);
+        cv::bitwise_and(diff1, diff2, motionMask);                          //forse da girare se il senso è tenere solo dove c'è stato il movimento sia prima che dopo
+        cv::threshold(motionMask, motionMask, 10, 255, cv::THRESH_BINARY);*/
+        
         cv::morphologyEx(motionMask, motionMask, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 15)));
 
-        std::vector<std::vector<cv::Point>> contours;
-        cv::findContours(motionMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-        cv::Rect curBox(0, 0, 0, 0);
-        double bestScore = 1e9;
-        for (const auto& c : contours) {
-            double a = cv::contourArea(c);
-            if (a > 60.0) {
-                cv::Rect r = cv::boundingRect(c);
-                float ar = static_cast<float>(r.width) / r.height;
-                double score = std::abs(ar - 0.42f) * 100.0 - std::min(a, 3000.0) * 0.05;
+        std::vector<std::vector<cv::Point>> mContours;
+        cv::findContours(motionMask, mContours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+        
+        
+        
+        cv::Rect curBox(0,0,0,0), secBox(0,0,0,0);   //current BEST Box = best box found so far for this frame
+        //cv::Point2f curCent,secCent;
+        double bestScore = 0,secBest=0; //for "new part"
+        //double bestScore = 1e9;
+        for (size_t j=0; j<mContours.size(); j++) {
+            double area = cv::contourArea(mContours[j]);
+            //curCent.x=mContours[j].x + mContours[j].width / 2.0f;
+            //curCent.y=mContours[j].y + mContours[j].height / 2.0f;
+            double proximityX = 0, proximityY=0; //proximity with previous box
+            double similarityW = 1, similarityH = 1; //similarity with previous box, to check due to expansions
+            if (area > 10 && area/static_cast<double>(imgW*imgH)<0.8) { //avoid too small areas and too big ones
+                //make the score something like "area + proximity to previous IF present * scale factor (too vertical or too horizontal close to 0 = no human form)
+                
+               
+                cv::Rect proposal = cv::boundingRect(mContours[j]);
+                if(i!=0){
+                    if(bboxes[i-1].area()>0){
+                        proximityX = centroids[i-1].x-(proposal.x+proposal.width/2.0f);
+                        proximityY = centroids[i-1].y-(proposal.y+proposal.height/2.0f);
+                        similarityW = static_cast<double>(proposal.width)/bboxes[i-1].width;
+                        similarityH = static_cast<double>(proposal.height)/bboxes[i-1].height;
+                    }
+                }
+                double proxXFactor = Gaussian(proximityX, -30, -10, 10, 30); //guassian with plateau withing -10, 10 (pixels of movement)
+                double proxYFactor = Gaussian(proximityX, -20, -5, 5, 20); //guassian with plateau withing -5, 5 (")
+                double simFactor = Gaussian(similarityW, 0.16, 0.5, 2, 6)*Gaussian(similarityH, 0.25, 0.66, 1.66, 4);    //box in new frame should be around same size as prevoius
+                double ARFactor = Gaussian(static_cast<double>(proposal.width)/proposal.height,0.07,0.17,0.75,1.5);                  //median aspect ratio of human should be around 1:3, 1:4 when still
+                //double score = (area+proximityX*proxXFactor+proximityY*proxYFactor)*simFactor*ARFactor;
+                //if(i==19) std::cout<<"proximity "<<proxXFactor*proxYFactor<<"  similarity "<<simFactor<<"  ARFactor "<<ARFactor<<std::endl;
+                double score = (0.4*area/static_cast<double>(imgW*imgH)+0.6*proxXFactor*proxYFactor)*simFactor*ARFactor;
+                if(score > bestScore){
+                    secBest=bestScore;
+                    secBox=curBox;
+                    
+                    bestScore=score;
+                    curBox=proposal;
+                }
+                else if(score > secBest){
+                    secBest=score;
+                    secBox=proposal;
+                }
+            /*
+                
+                cv::Rect tmp = cv::boundingRect(mContours[j]);
+                float ar = static_cast<float>(tmp.width) / tmp.height;
+                double score = std::abs(ar - 0.42f) * 100.0 - std::min(area, 3000.0) * 0.05; //da rivedere questo score sia per le proporzioni che per l'area
                 if (score < bestScore) {
                     bestScore = score;
-                    curBox = r;
-                }
+                    curBox = tmp;
+                }*/
             }
         }
 
-        if (curBox.area() > 0) {
-            cv::Rect safeBox = curBox & cv::Rect(0, 0, imgW, imgH); 
+        cv::Mat debug;
+        cv::cvtColor(grays[i], debug, cv::COLOR_GRAY2BGR);
+        /*if(i==19){
+            std::cout<<"\ncontours found "<<mContours.size()<<"\n";
+            cv::rectangle(debug, secBox, cv::Scalar(255,0,0),2);
+            cv::rectangle(debug, curBox, cv::Scalar(0,0,255),2);
+            cv::rectangle(debug, curBox|secBox, cv::Scalar(0,255,0),2);
+            std::cout<<"best "<<bestScore<<" second "<<secBest<<"\n\n"<<std::endl;
+            cv::imshow("squares", debug);
+            cv::waitKey(0);
+        }*/
+        if(bestScore*0.6<=secBest){
+            curBox = curBox|secBox;
+        }
+        if (curBox.area()>0) {
+            
+            /*cv::Rect safeBox = curBox & cv::Rect(0, 0, imgW, imgH); 
             float density = 0.0f;
             if (safeBox.area() > 0) {
                 int movingPixels = cv::countNonZero(motionMask(safeBox));
                 density = static_cast<float>(movingPixels) / safeBox.area();
+            }*/
+            
+            if (curBox.height<personZoneVideo.height*0.7) { //expands vertically
+                int newH=personZoneVideo.height;
+                int newY=std::max(0, std::min(curBox.y, personZoneVideo.y));
+                if (newY+newH>imgH) newH=imgH-newY;
+                curBox.y=newY;
+                curBox.height=newH;
             }
-            motionDensities.push_back(density);
-            if (curBox.height < globalActorZone.height * 0.72f) {
-                int newH = globalActorZone.height;
-                int newY = std::max(0, std::min(curBox.y, globalActorZone.y));
-                if (newY + newH > imgH) newH = imgH - newY;
-                curBox.y = newY;
-                curBox.height = newH;
-            }
-            int minW = static_cast<int>(curBox.height * 0.30f);
+            int minW = static_cast<int>(curBox.height*0.3); //expands horizontally
             if (curBox.width < minW) {
-                int cx = curBox.x + curBox.width / 2;
-                curBox.x = std::max(0, cx - minW / 2);
-                curBox.width = std::min(imgW - curBox.x, minW);
+                double newCent= 0.7*(curBox.x+curBox.width/2) + 0.3*(personZoneVideo.x+personZoneVideo.width/2);
+                curBox.width=minW;
+                curBox.x=std::max(0,static_cast<int>(newCent-minW/2));
+                if (curBox.x+curBox.width>imgW) curBox.x=imgW-curBox.width;
+                
+                
+                /*int cx = curBox.x + curBox.width / 2;
+                curBox.x = std::max(0, cx - minW / 2);      //BEFORE
+                curBox.width = std::min(imgW - curBox.x, minW);*/
             }
             bboxes.push_back(curBox);
-            centroids.push_back(cv::Point2f(curBox.x + curBox.width / 2.0f, curBox.y + curBox.height / 2.0f));
-            aspectRatios.push_back(static_cast<float>(curBox.width) / curBox.height);
-            widths.push_back(static_cast<float>(curBox.width));
+            centroids.push_back(cv::Point2f(curBox.x+curBox.width/2.0f, curBox.y+curBox.height/2.0f));   //saves found bbox
             actorHeights.push_back(static_cast<float>(curBox.height));
-        } else if (!bboxes.empty()) {
-            bboxes.push_back(bboxes.back());
-            centroids.push_back(centroids.back());
-            aspectRatios.push_back(aspectRatios.back());
-            widths.push_back(widths.back());
-            actorHeights.push_back(actorHeights.back());
+        } else if (bboxes.size()>0) {
+            bboxes.push_back(bboxes[i-1]);        //no bbox found, takes the previous
+            centroids.push_back(centroids[i-1]);
+            actorHeights.push_back(actorHeights[i-1]);
         } else {
-            bboxes.push_back(globalActorZone);
-            centroids.push_back(cv::Point2f(globalActorZone.x + globalActorZone.width / 2.0f, globalActorZone.y + globalActorZone.height / 2.0f));
-            aspectRatios.push_back(static_cast<float>(globalActorZone.width) / globalActorZone.height);
-            widths.push_back(static_cast<float>(globalActorZone.width));
-            actorHeights.push_back(static_cast<float>(globalActorZone.height));
+            bboxes.push_back(personZoneVideo);           //no bbox found AND no previous box => saves the whole energy = movement
+            centroids.push_back(cv::Point2f(personZoneVideo.x + personZoneVideo.width / 2.0f, personZoneVideo.y + personZoneVideo.height / 2.0f));
+            actorHeights.push_back(static_cast<double>(personZoneVideo.height));
         }
     }
-
+    //std::cout<<"END MY PART for now"<<std::endl;
     // 5-Frame Temporal Rolling Centroid Anchor around Frame 20 for stable mIoU
     cv::Rect smoothedBox20 = bboxes[19];
-    if (bboxes.size() >= 23) {
-        int avgX = 0, avgY = 0, avgW = 0, avgH = 0;
-        for (int k = 17; k <= 21; ++k) {
-            avgX += bboxes[k].x;
-            avgY += bboxes[k].y;
-            avgW += bboxes[k].width;
-            avgH += bboxes[k].height;
-        }
-        smoothedBox20 = cv::Rect(avgX / 5, avgY / 5, avgW / 5, avgH / 5);
+    int avgX=0, avgY=0, avgW=0, avgH=0;
+    for (int k = 17; k <= 21; ++k) {            //calcola la media delle bbox trovate attorno al frame 20 = indice 19
+        avgX += bboxes[k].x;
+        avgY += bboxes[k].y;
+        avgW += bboxes[k].width;
+        avgH += bboxes[k].height;
     }
+    smoothedBox20 = cv::Rect(avgX / 5, avgY / 5, avgW / 5, avgH / 5);
     sample.bbox20 = smoothedBox20;
 
     std::sort(actorHeights.begin(), actorHeights.end());
+
     float H = std::max(30.0f, actorHeights[actorHeights.size() / 2]); // pick median H for scale inv.
+    
 
     extractFeatures(sample, grays, bboxes, H);
 
@@ -435,7 +477,9 @@ int main(int argc, char** argv) {
         if (netTraverse < 0.12f && isLocomotionPrediction) {
             // Re-route back to dominant stationary prediction
             pred = (samples[i].features[7] > 0.02f) ? HANDWAVING : HANDCLAPPING;
-        }*/
+        }   
+        
+        */
 
         samples[i].predictedLabel = pred;
         int trueLabel = samples[i].trueLabel;

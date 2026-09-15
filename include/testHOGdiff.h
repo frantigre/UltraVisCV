@@ -6,6 +6,8 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <stdexcept>
+#include <iostream> //for debugging
 
 cv::Mat difference(cv::Mat prev,cv::Mat succ); //keep
 
@@ -18,5 +20,9 @@ std::vector<float> computeHOG(cv::Mat img, cv::HOGDescriptor hog); //no good
 std::vector<float> HOGVideo(std::vector<cv::Mat> video, cv::HOGDescriptor hog); //no good
 
 void shuffleData(cv::Mat& data, cv::Mat& classifiers, unsigned int seed=0); //keep
+
+cv::Mat computeTemporalEnergy(std::vector<cv::Mat> video); //change name?
+
+double Gaussian(double x, double a, double b, double c, double d);
 
 #endif

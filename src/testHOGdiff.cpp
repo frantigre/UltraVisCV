@@ -2,12 +2,16 @@
 
 cv::Mat difference(cv::Mat prev,cv::Mat succ){
     cv::Mat grayPrev,graySucc,diff;
-    //cv::Mat mask; //remove very low differences, might be needed
-    cv::cvtColor(prev,grayPrev,cv::COLOR_BGR2GRAY);
-    cv::cvtColor(succ,graySucc,cv::COLOR_BGR2GRAY);
+    cv::Mat masked;  //removed very low diff
+    //std::cout<<"prev ch "<<prev.channels()<<" succ ch "<<succ.channels()<<std::endl;
+    if(prev.channels()==1) grayPrev=prev; //already grayscale
+    else cv::cvtColor(prev,grayPrev,cv::COLOR_BGR2GRAY);
+    if(succ.channels()==1) graySucc=succ; //already grayscale
+    else cv::cvtColor(succ,graySucc,cv::COLOR_BGR2GRAY);
     absdiff(grayPrev,graySucc,diff);
-    //eventually use mask for threshold and return mask
-    return diff;
+    //might be good to choose the min value
+    cv::threshold(diff,masked,10,255,cv::THRESH_TOZERO);
+    return masked;
 }
 
 std::vector<cv::Mat> videoDiff(std::vector<cv::Mat> video){
@@ -62,4 +66,58 @@ void shuffleData(cv::Mat& data, cv::Mat& cl, unsigned int seed){
     }
     data=dataS;
     cl=clS;
+}
+
+cv::Mat computeTemporalEnergy(std::vector<cv::Mat> video) {
+    std::vector<cv::Mat> diffs=videoDiff(video); //differences between every frame and next one
+    cv::Mat sumDiff = cv::Mat::zeros(diffs[0].size(), CV_16U); //sum of all differences 16U since it will go beyond 255
+    for(size_t i=0; i<diffs.size(); i++){
+        cv::Mat tmp;
+        diffs[i].convertTo(tmp, CV_16U);
+        sumDiff+=diffs[i];
+    }
+    sumDiff/=static_cast<float>(diffs.size()); //brings back values to 0-255
+    cv::Mat res;
+    sumDiff.convertTo(res, CV_8U); //go back in 8 bit format
+    return res;
+}
+    //old funct 
+    /*int rows = grays[0].rows;
+    int cols = grays[0].cols;
+    int n = static_cast<int>(grays.size());
+
+    cv::Mat meanImg(rows, cols, CV_32F, cv::Scalar(0));
+    for (const auto& g : grays) {
+        cv::Mat f;
+        g.convertTo(f, CV_32F);
+        meanImg += f;
+    }
+    meanImg /= static_cast<float>(n);
+
+    cv::Mat varImg(rows, cols, CV_32F, cv::Scalar(0));
+    for (const auto& g : grays) {
+        cv::Mat f, diff;
+        g.convertTo(f, CV_32F);
+        diff = f - meanImg;
+        varImg += diff.mul(diff);
+    }
+    varImg /= static_cast<float>(n);
+
+    cv::Mat stdImg;
+    cv::sqrt(varImg, stdImg);
+    cv::Mat energy8U;
+    stdImg.convertTo(energy8U, CV_8U);
+    return energy8U;
+}*/
+
+//std::vector<cv::Mat> toGray(std::vector<cv::Mat> video);
+
+double Gaussian(double x, double a, double b, double c, double d){
+    double t;
+    if (a>=b || b>c || c>=d) throw std::invalid_argument("Invalid values for generating Plateau");
+    if (x<=a || x>=d) return 0;
+    if (x>=b && x<=c) return 1;
+    if (x>a && x<b) t=(b-x)/(b-a);
+    if (x>c && x<d) t=(x-c)/(d-c);
+    return std::exp(-3*(std::pow(t,3)));
 }
