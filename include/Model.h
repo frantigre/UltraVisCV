@@ -1,28 +1,19 @@
-#include <opencv2/opencv.hpp>
-#include <opencv2/ml.hpp>
-#include <iostream>
-#include <iomanip>
+#ifndef MODEL_EVALUATOR_H
+#define MODEL_EVALUATOR_H
+
 #include <vector>
-#include <string>
-#include <filesystem>
-#include <fstream>
-#include <numeric>
-#include <cmath>
-#include <algorithm>
 #include "SequenceSample.h"
-#include "FeatureExtractor.h"
-#include "testHOGdiff.h"
-#include "action_utils.h"
 
+class ModelEvaluator {
+public:
+    void DeploySVM(std::vector<SequenceSample>& samples);
+    void EvaluateModel();
 
-namespace fs = std::filesystem;
-
-struct ModelResult
-{
-    int correct,
-    int N,
-    double totalIoU,
-    int confusionMatrix[7][7]
+private:
+    int numFeats;
+    int correct;
+    double totalIoU;
+    int confusionMatrix[7][7];
 };
 
-void DeploySVM(std::vector<SequenceSample> samples);
+#endif

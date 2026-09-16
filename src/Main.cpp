@@ -387,8 +387,9 @@ int main(int argc, char** argv) {
         }
     }
     
-    DeploySVM(samples);
-    EvaluateSVM();
+    ModelEvaluator model;
+    model.DeploySVM(samples);
+    model.EvaluateModel();
 
     return 0;
 }
