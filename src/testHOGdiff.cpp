@@ -68,7 +68,7 @@ void shuffleData(cv::Mat& data, cv::Mat& cl, unsigned int seed){
     cl=clS;
 }
 
-cv::Mat computeTemporalEnergy(std::vector<cv::Mat> video) {
+cv::Mat MeanOfDifferences(std::vector<cv::Mat> video) {
     std::vector<cv::Mat> diffs=videoDiff(video); //differences between every frame and next one
     cv::Mat sumDiff = cv::Mat::zeros(diffs[0].size(), CV_16U); //sum of all differences 16U since it will go beyond 255
     for(size_t i=0; i<diffs.size(); i++){
@@ -81,36 +81,6 @@ cv::Mat computeTemporalEnergy(std::vector<cv::Mat> video) {
     sumDiff.convertTo(res, CV_8U); //go back in 8 bit format
     return res;
 }
-    //old funct 
-    /*int rows = grays[0].rows;
-    int cols = grays[0].cols;
-    int n = static_cast<int>(grays.size());
-
-    cv::Mat meanImg(rows, cols, CV_32F, cv::Scalar(0));
-    for (const auto& g : grays) {
-        cv::Mat f;
-        g.convertTo(f, CV_32F);
-        meanImg += f;
-    }
-    meanImg /= static_cast<float>(n);
-
-    cv::Mat varImg(rows, cols, CV_32F, cv::Scalar(0));
-    for (const auto& g : grays) {
-        cv::Mat f, diff;
-        g.convertTo(f, CV_32F);
-        diff = f - meanImg;
-        varImg += diff.mul(diff);
-    }
-    varImg /= static_cast<float>(n);
-
-    cv::Mat stdImg;
-    cv::sqrt(varImg, stdImg);
-    cv::Mat energy8U;
-    stdImg.convertTo(energy8U, CV_8U);
-    return energy8U;
-}*/
-
-//std::vector<cv::Mat> toGray(std::vector<cv::Mat> video);
 
 double Gaussian(double x, double a, double b, double c, double d){
     double t;

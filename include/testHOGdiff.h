@@ -21,7 +21,7 @@ std::vector<float> HOGVideo(std::vector<cv::Mat> video, cv::HOGDescriptor hog); 
 
 void shuffleData(cv::Mat& data, cv::Mat& classifiers, unsigned int seed=0); //keep
 
-cv::Mat computeTemporalEnergy(std::vector<cv::Mat> video); //change name?
+cv::Mat MeanOfDifferences(std::vector<cv::Mat> video);
 
 double Gaussian(double x, double a, double b, double c, double d);
 
