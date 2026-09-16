@@ -6,9 +6,9 @@
 #include <vector>
 #include <iostream>
 #include <filesystem>
-#include "DataStructures.h"
+#include "action_utils.h"
 
-void getDataset (std::vector<std::vector<cv::Mat>>& data, std::vector<GTruth>& labels);
-void getSequence (std::string path, std::vector<cv::Mat>& data, GTruth& labels);
+void getDataset (std::vector<std::vector<cv::Mat>>& data, std::vector<GroundTruth>& labels);
+void getSequence (std::string path, std::vector<cv::Mat>& data, GroundTruth& labels);
 
 #endif

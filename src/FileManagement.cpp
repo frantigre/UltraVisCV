@@ -1,7 +1,7 @@
 #include "FileManagement.h"
 
 
-void getDataset(std::vector<std::vector<cv::Mat>>& data, std::vector<GTruth>& labels){
+void getDataset(std::vector<std::vector<cv::Mat>>& data, std::vector<GroundTruth>& labels){
     std::string root = "../dataset/Sequences";
     std::vector<std::string> types = {"boxing", "handclapping", "handwaving", "running", "jogging", "walking" };
     for(size_t i=0; i<types.size(); i++){
@@ -10,7 +10,7 @@ void getDataset(std::vector<std::vector<cv::Mat>>& data, std::vector<GTruth>& la
             std::cout<<sample<<std::endl;
             if(sample.is_directory()){
                 std::vector<cv::Mat> sampleData;
-                GTruth sampleLabels;
+                GroundTruth sampleLabels;
                 getSequence(sample.path().string(), sampleData, sampleLabels);
                 data.push_back(sampleData);
                 labels.push_back(sampleLabels);
@@ -19,7 +19,7 @@ void getDataset(std::vector<std::vector<cv::Mat>>& data, std::vector<GTruth>& la
     }
 }
 
-void getSequence (std::string path, std::vector<cv::Mat>& data, GTruth& labels){
+void getSequence (std::string path, std::vector<cv::Mat>& data, GroundTruth& labels){
     //std::cout<<"extracting from "<<path<<std::endl;;
     std::vector<std::string> files;
     cv::glob(path+"/data/*.png",files);
@@ -27,11 +27,11 @@ void getSequence (std::string path, std::vector<cv::Mat>& data, GTruth& labels){
         cv::Mat temporary = cv::imread(files[i]);
         data.push_back(temporary);
     }
-    std::vector<int> temp={-1,-1,-1,-1,-1}; //initialization
+    std::vector<float> temp={-1.0,-1.0,-1.0,-1.0,-1.0}; //initialization
     std::ifstream file(path+"/labels/ground_truth.txt");
     if(!file) throw std::runtime_error("nodata GetLabel");
     for(int i=0; i<5;i++){ //there are 5 data in the label file: type, xmin,ymin,xmax,ymax
         file>>temp[i];
     }
-    labels = GTruth(temp[0],temp[1],temp[2],temp[3],temp[4]);
+    labels = GroundTruth(temp[0],temp[1],temp[2],temp[3],temp[4]);
 }

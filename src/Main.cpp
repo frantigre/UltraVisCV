@@ -13,11 +13,13 @@
 #include "FeatureExtractor.h"
 #include "testHOGdiff.h"
 #include "action_utils.h"
+#include "Bboxes.h"
+#include "FileManagement.h"
 
 
 namespace fs = std::filesystem;
 
-bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
+/*bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {      //da rimuovere
     sample.seqName = seqDir.filename().string();
     sample.trueLabel = getActionIdFromName(sample.seqName);
     if (sample.trueLabel == -1) {
@@ -110,7 +112,7 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
         cv::absdiff(grays[i], grays[prevI], diff1);
         cv::absdiff(grays[i], grays[succI], diff2);
         cv::bitwise_and(diff1, diff2, motionMask);                          //forse da girare se il senso è tenere solo dove c'è stato il movimento sia prima che dopo
-        cv::threshold(motionMask, motionMask, 10, 255, cv::THRESH_BINARY);*/
+        cv::threshold(motionMask, motionMask, 10, 255, cv::THRESH_BINARY);
         
         cv::morphologyEx(motionMask, motionMask, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 15)));
 
@@ -143,7 +145,7 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
                     }
                 }
                 double proxXFactor = Gaussian(proximityX, -30, -10, 10, 30); //guassian with plateau withing -10, 10 (pixels of movement)
-                double proxYFactor = Gaussian(proximityX, -20, -5, 5, 20); //guassian with plateau withing -5, 5 (")
+                double proxYFactor = Gaussian(proximityY, -20, -5, 5, 20); //guassian with plateau withing -5, 5 (")
                 double simFactor = Gaussian(similarityW, 0.16, 0.5, 2, 6)*Gaussian(similarityH, 0.25, 0.66, 1.66, 4);    //box in new frame should be around same size as prevoius
                 double ARFactor = Gaussian(static_cast<double>(proposal.width)/proposal.height,0.07,0.17,0.75,1.5);                  //median aspect ratio of human should be around 1:3, 1:4 when still
                 //double score = (area+proximityX*proxXFactor+proximityY*proxYFactor)*simFactor*ARFactor;
@@ -168,7 +170,7 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
                 if (score < bestScoreB) {
                     bestScoreB = score;
                     curBox = tmp;
-                }*/
+                }
             }
         }
         
@@ -224,7 +226,7 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
             cv::rectangle(debug, curEdge, cv::Scalar(255,0,0),2);
             cv::imshow("two boxes", debug);
             //cv::waitKey(0);
-        }*/
+        }
         
         if (curBox.area()>0) {
             
@@ -233,7 +235,7 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
             if (safeBox.area() > 0) {
                 int movingPixels = cv::countNonZero(motionMask(safeBox));
                 density = static_cast<float>(movingPixels) / safeBox.area();
-            }*/
+            }
             
             if (curBox.height<personZoneVideo.height*0.7) { //expands vertically
                 int newH=personZoneVideo.height;
@@ -252,7 +254,7 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
                 
                 /*int cx = curBox.x + curBox.width / 2;
                 curBox.x = std::max(0, cx - minW / 2);      //BEFORE
-                curBox.width = std::min(imgW - curBox.x, minW);*/
+                curBox.width = std::min(imgW - curBox.x, minW);
             }
             bboxes.push_back(curBox);
             centroids.push_back(cv::Point2f(curBox.x+curBox.width/2.0f, curBox.y+curBox.height/2.0f));   //saves found bbox
@@ -268,25 +270,20 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
         }
     }
     //std::cout<<"END MY PART for now"<<std::endl;
-    // 5-Frame Temporal Rolling Centroid Anchor around Frame 20 for stable mIoU
-    cv::Rect smoothedBox20 = bboxes[19];
-    int avgX=0, avgY=0, avgW=0, avgH=0;
-    for (int k = 17; k <= 21; ++k) {            //calcola la media delle bbox trovate attorno al frame 20 = indice 19
-        avgX += bboxes[k].x;
-        avgY += bboxes[k].y;
-        avgW += bboxes[k].width;
-        avgH += bboxes[k].height;
-    }
-    smoothedBox20 = cv::Rect(avgX / 5, avgY / 5, avgW / 5, avgH / 5);
-    sample.bbox20 = smoothedBox20;
+    sample.bbox20=bboxes[19];
 
     std::sort(actorHeights.begin(), actorHeights.end());
 
     float H = std::max(30.0f, actorHeights[actorHeights.size() / 2]); // pick median H for scale inv.
     
 
+        //SAMU FUNCTION
+            
     extractFeatures(sample, grays, bboxes, H);
-
+        
+        
+        //it's just IoU
+        
     if (hasGT && grays.size() >= 20) {
         int W = imgW;
         int imgH_ref = imgH;
@@ -305,9 +302,9 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
         sample.iou = 0.0;
     }
     return true;
-}
+}*/
 
-void saveAnnotatedFrame20(const SequenceSample& sample, const fs::path& outDir) {
+/*void saveAnnotatedFrame20(const SequenceSample& sample, const fs::path& outDir) {
     cv::Mat frame = cv::imread(sample.frame20Path);
     if (frame.empty()) return;
 
@@ -327,7 +324,7 @@ void saveAnnotatedFrame20(const SequenceSample& sample, const fs::path& outDir) 
 
     fs::path outFile = outDir / (sample.seqName + "_frame20.png");
     cv::imwrite(outFile.string(), frame);
-}
+}*/
 
 class TeeBuffer : public std::streambuf {
 public:
@@ -349,7 +346,7 @@ private:
     std::streambuf* sb2_;
 };
 
-int main(int argc, char** argv) {
+/*int main(int argc, char** argv) {
     std::ofstream outFile("output.txt");
     std::streambuf* origCoutBuf = std::cout.rdbuf();
     std::unique_ptr<TeeBuffer> tee;
@@ -452,18 +449,6 @@ int main(int argc, char** argv) {
         bool isStationaryPrediction = (pred == BOXING || pred == HANDWAVING || pred == HANDCLAPPING);
         bool isLocomotionPrediction = (pred == WALKING || pred == JOGGING || pred == RUNNING);
 
-        // Guardrail 1: Moving actors cannot be classified as stationary
-        /*if (netTraverse > 0.35f && isStationaryPrediction) {
-            pred = WALKING;
-        }
-        // Guardrail 2: Stationary actors cannot be classified as locomotion
-        if (netTraverse < 0.12f && isLocomotionPrediction) {
-            // Re-route back to dominant stationary prediction
-            pred = (samples[i].features[7] > 0.02f) ? HANDWAVING : HANDCLAPPING;
-        }   
-        
-        */
-
         samples[i].predictedLabel = pred;
         int trueLabel = samples[i].trueLabel;
 
@@ -532,4 +517,34 @@ int main(int argc, char** argv) {
 
     std::cout.rdbuf(origCoutBuf);
     return 0;
+}*/
+int main(int argc, char** argv) {
+    std::vector<std::vector<cv::Mat>> database;
+    std::vector<std::vector<cv::Mat>> DBGray; //might not be needed
+    std::vector<GroundTruth> gt;
+    getDataset(database, gt);
+    //std::cout<<"CARICA (credo)"<<std::endl;
+    float mIoU=0;
+    for(size_t i=0; i<database.size(); i++){
+        std::cout<<"computing video "<<i+1<<std::endl;
+        //DBGray.push_back(toGray(database[i])); not necessary probably
+        std::vector<cv::Mat> videoG=toGray(database[i]);
+        SequenceSample sample;
+        std::vector<cv::Rect> bboxes;
+        float H;
+        
+        sample.frame20=videoG[19]; //19 index = frame 20
+        sample.seqName="video"+std::to_string(i);
+        
+        findBoxes(videoG, sample, bboxes, H);
+        extractFeatures(sample, videoG, bboxes, H);
+        
+        sample.iou = computeIoU(sample.bbox20, gt[i].bbox);
+        /*std::cout<<"\nvideo "<<i+1<<"\nbox20 "<<sample.bbox20<<std::endl;
+        std::cout<<"grounTruth "<<gt[i].bbox<<std::endl;
+        std::cout<<"IoU video "<<i+1<<" : "<<sample.iou<<std::endl;*/
+        mIoU+=sample.iou;
+        saveAnnotatedFrame20(sample,"prova"); 
+    }
+    std::cout<<mIoU/database.size()<<std::endl;
 }
