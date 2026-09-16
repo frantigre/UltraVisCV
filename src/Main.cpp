@@ -536,15 +536,15 @@ int main(int argc, char** argv) {
         sample.frame20=videoG[19]; //19 index = frame 20
         sample.seqName="video"+std::to_string(i);
         
-        findBoxes(videoG, sample, bboxes, H);
-        extractFeatures(sample, videoG, bboxes, H);
+        findBoxes(videoG, sample, bboxes, H);       //finds bboxes in the video included the one in frame 20
+        extractFeatures(sample, videoG, bboxes, H); //extract features for classification
         
-        sample.iou = computeIoU(sample.bbox20, gt[i].bbox);
+        sample.iou = computeIoU(sample.bbox20, gt[i].bbox);     
         /*std::cout<<"\nvideo "<<i+1<<"\nbox20 "<<sample.bbox20<<std::endl;
         std::cout<<"grounTruth "<<gt[i].bbox<<std::endl;
         std::cout<<"IoU video "<<i+1<<" : "<<sample.iou<<std::endl;*/
         mIoU+=sample.iou;
-        saveAnnotatedFrame20(sample,"prova"); 
+        saveAnnotatedFrame20(sample,"prova"); //writes file visualizing bbox and category of frame 20
     }
     std::cout<<mIoU/database.size()<<std::endl;
 }
