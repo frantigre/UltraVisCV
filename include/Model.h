@@ -9,6 +9,8 @@
 #include <filesystem>
 #include <cmath>
 #include <algorithm>
+#include <random>
+#include <numeric>
 
 #include "action_utils.h"
 #include "testHOGdiff.h"

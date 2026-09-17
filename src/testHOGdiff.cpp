@@ -23,51 +23,6 @@ std::vector<cv::Mat> videoDiff(std::vector<cv::Mat> video){
     return differences;
 }
 
-cv::HOGDescriptor generateHOG(cv::Mat frame){
-    cv::HOGDescriptor hog(
-        cv::Size(frame.cols, frame.rows),
-        cv::Size(16, 16),
-        cv::Size(8, 8),
-        cv::Size(8, 8),
-        9
-    );
-    return hog;
-}
-
-std::vector<float> computeHOG(cv::Mat img, cv::HOGDescriptor hog){
-    std::vector<float> descriptor;
-    hog.compute(img, descriptor);
-    return descriptor;
-}
-
-std::vector<float> HOGVideo(std::vector<cv::Mat> videoDiff, cv::HOGDescriptor hog){
-    std::vector<float> HOGVideo;
-    for(size_t i=0; i<videoDiff.size();i++){
-        std::vector<float> descriptor = computeHOG(videoDiff[i], hog);
-        for(size_t j=0; j<descriptor.size(); j++){
-            HOGVideo.push_back(descriptor[j]);
-        }
-    }
-    return HOGVideo;
-}
-
-void shuffleData(cv::Mat& data, cv::Mat& cl, unsigned int seed){
-    cv::Mat dataS = data.clone();
-    cv::Mat clS = cl.clone(); //cl = classes
-    std::vector<int> indexes;
-    for(int i=0; i<data.rows;i++){
-        indexes.push_back(i);
-    }
-    std::mt19937 generator(seed);
-    std::shuffle(indexes.begin(), indexes.end(), generator);
-    for(int i=0; i<data.rows; i++){
-        data.row(indexes[i]).copyTo(dataS.row(i));
-        cl.row(indexes[i]).copyTo(clS.row(i));
-    }
-    data=dataS;
-    cl=clS;
-}
-
 cv::Mat MeanOfDifferences(std::vector<cv::Mat> video) {
     std::vector<cv::Mat> diffs=videoDiff(video); //differences between every frame and next one
     cv::Mat sumDiff = cv::Mat::zeros(diffs[0].size(), CV_16U); //sum of all differences 16U since it will go beyond 255

@@ -2,25 +2,23 @@
 
 namespace fs = std::filesystem;
 
-/*
-    TO DO:  
-            std::vector<SequenceSample>& samples nel costruttore
-            Dipendenze da   saveAnnotatedFrame20,
-                            OutImgDir,
-                            origCoutBuf
-*/
-
 void DeploySVM(std::vector<SequenceSample>& samples) {
     int numFeats = static_cast<int>(samples[0].features.size());
     int correct = 0;
-    float totalIoU = 0.0;
-    int confusionMatrix[7][7] = {0};
+
+    // vector of shuffledIndexs for random training
+    std::vector<int> shuffledIndexs(samples.size());
+    std::iota(shuffledIndexs.begin(), shuffledIndexs.end(), 0);
+    
+    std::mt19937 mt(50); // fixed seed for repeatibility
+    std::shuffle(shuffledIndexs.begin(), shuffledIndexs.end(), mt);
 
     // Leave-One-Out Cross-Validation (LOOCV)
     for (int i = 0; i < samples.size(); ++i) {
         std::vector<float> mean(numFeats, 0.0f);
         std::vector<float> stddev(numFeats, 0.0f);
 
+        // Order doesn't matter for mathematical sums, so standard iteration is fine here
         for (int j = 0; j < samples.size(); ++j) {
             if (i == j) continue;
 
@@ -50,7 +48,8 @@ void DeploySVM(std::vector<SequenceSample>& samples) {
 
         int trainIdx = 0;
 
-        for (int j = 0; j < samples.size(); ++j) {
+        // Populate trainData and trainLabels using the SHUFFLED indices
+        for (int j : shuffledIndexs) {
             if (i == j) continue;
 
             for (int f = 0; f < numFeats; ++f) {
@@ -77,15 +76,12 @@ void DeploySVM(std::vector<SequenceSample>& samples) {
 
         int pred = static_cast<int>(svm->predict(testSample));
 
+        // The predictions are safely written back to the original struct without shifting its index
         samples[i].predictedLabel = pred;
         int trueLabel = samples[i].trueLabel;
 
-        confusionMatrix[trueLabel][samples[i].predictedLabel]++;
-
         if (samples[i].predictedLabel == trueLabel)
             correct++;
-
-        totalIoU += samples[i].iou;
 
         std::cout << "Seq: " << samples[i].seqName
                   << " | True: " << std::left << std::setw(12) << getActionName(trueLabel)
