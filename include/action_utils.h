@@ -8,13 +8,21 @@
 #include <iostream> //degug
 #include "SequenceSample.h"
 
-enum ActionType {
+/*enum ActionType {
     WALKING = 1,
     JOGGING = 2,
     RUNNING = 3,
     BOXING = 4,
     HANDWAVING = 5,
     HANDCLAPPING = 6
+};*/ //sbagliato per non so quale motivo
+enum ActionType{
+    BOXING=1,
+    HANDCLAPPING=2,
+    HANDWAVING=3,
+    JOGGING=4,
+    RUNNING=5,
+    WALKING=6
 };
 
 std::string getActionName(int id);
