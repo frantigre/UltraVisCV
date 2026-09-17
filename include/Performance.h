@@ -4,8 +4,10 @@
 
 //probably not needed float mIoU(std::vector<float>);
 
-cv::Mat ConfMatrix(std::vector<GroundTruth> real, std::vector<int> predict); //can be string depending on how we classify
+cv::Mat ConfMatrix(std::vector<SequenceSample> samples); //can be string depending on how we classify
 
-float F1Score(std::vector<GroundTruth> real, std::vector<int> predict, int picked_class); //can be string depending on how we classify
+//float F1Score(std::vector<SequenceSample> samples, int picked_class); //can be string depending on how we classify
 
+float F1Score(cv::Mat matrix, int picked_class);
 
+void EvaluateModel(std::vector<SequenceSample> samples);

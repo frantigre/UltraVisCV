@@ -1,16 +1,5 @@
 #include "Model.h"
 
-#include <opencv2/opencv.hpp>
-#include <opencv2/ml.hpp>
-#include <iostream>
-#include <iomanip>
-#include <filesystem>
-#include <cmath>
-#include <algorithm>
-
-#include "action_utils.h"
-#include "testHOGdiff.h"
-
 namespace fs = std::filesystem;
 
 /*
@@ -22,9 +11,9 @@ namespace fs = std::filesystem;
 */
 
 void DeploySVM(std::vector<SequenceSample>& samples) {
-    numFeats = static_cast<int>(samples[0].features.size());
-    correct = 0;
-    totalIoU = 0.0;
+    int numFeats = static_cast<int>(samples[0].features.size());
+    int correct = 0;
+    float totalIoU = 0.0;
     int confusionMatrix[7][7] = {0};
 
     // Leave-One-Out Cross-Validation (LOOCV)
@@ -104,11 +93,11 @@ void DeploySVM(std::vector<SequenceSample>& samples) {
                   << " | IoU (Frame 20): " << std::fixed << std::setprecision(4) << samples[i].iou << "\n";
     }
     
-    std::cout << "\n================ EVALUATION METRICS ================\n";
+    /*std::cout << "\n================ EVALUATION METRICS ================\n";
     std::cout << "Total Processed: " << samples.size() << " sequences\n";
     std::cout << "Global Accuracy: " << std::fixed << std::setprecision(2) << (static_cast<double>(correct) / samples.size()) * 100.0 << "%\n";
     std::cout << "Mean IoU (mIoU): " << std::fixed << std::setprecision(4) << (totalIoU / samples.size()) << "\n\n";
 
     std::cout << "Confusion Matrix (Rows: Ground Truth, Cols: Predicted):\n";
-    std::cout << "\tWALK\tJOG\tRUN\tBOX\tWAVE\tCLAP\n";
+    std::cout << "\tWALK\tJOG\tRUN\tBOX\tWAVE\tCLAP\n";*/
 }

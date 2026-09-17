@@ -5,6 +5,7 @@
 #include <vector>
 #include <opencv2/core.hpp>
 #include <filesystem>
+#include <iostream> //degug
 #include "SequenceSample.h"
 
 enum ActionType {

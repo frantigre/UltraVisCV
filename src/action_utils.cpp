@@ -83,10 +83,12 @@ void saveAnnotatedFrame20(SequenceSample sample,std::filesystem::path outDir) { 
     }
     
     std::string labelText = getActionName(sample.predictedLabel);
-    if(labelText!="unknown"){
+    //std::cout<<"text: "<<labelText;
+    if(labelText=="unknown"){
         cv::rectangle(sample.frame20, sample.bbox20, cv::Scalar(0, 0, 255), 2);
-        std::filesystem::path outFile = outDir / (sample.seqName + "_frame20.png");
+        std::filesystem::path outFile= outDir/(sample.seqName + "_frame20.png");
         cv::imwrite(outFile.string(), sample.frame20);
+        //std::cout<<" no text"<<std::endl;
     }
     else{
 
@@ -94,14 +96,14 @@ void saveAnnotatedFrame20(SequenceSample sample,std::filesystem::path outDir) { 
 
         cv::Point textPos;
         if (sample.bbox20.x > 80) {
-            textPos = cv::Point(std::max(10, sample.bbox20.x - 75), std::max(20, sample.bbox20.y + 15));
+            textPos=cv::Point(std::max(10, sample.bbox20.x-75), std::max(20, sample.bbox20.y+15));
         } else {
-            textPos = cv::Point(std::min(sample.frame20.cols - 80, sample.bbox20.x + sample.bbox20.width + 5), std::max(20, sample.bbox20.y + 15));
+            textPos=cv::Point(std::min(sample.frame20.cols-80, sample.bbox20.x+sample.bbox20.width+5), std::max(20, sample.bbox20.y+15));
         }
 
         cv::putText(sample.frame20, labelText, textPos, cv::FONT_HERSHEY_SIMPLEX, 0.65, cv::Scalar(0, 0, 255), 2);
-
-        std::filesystem::path outFile = outDir / (sample.seqName + "_frame20.png");
+        //std::cout<<" text wrote: "<<labelText<<std::endl;
+        std::filesystem::path outFile=outDir/(sample.seqName + "_frame20.png");
         cv::imwrite(outFile.string(), sample.frame20);
     }
 }

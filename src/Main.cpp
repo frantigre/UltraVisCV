@@ -9,6 +9,7 @@
 #include <numeric>
 #include <cmath>
 #include <algorithm>
+
 #include "SequenceSample.h"
 #include "FeatureExtractor.h"
 #include "testHOGdiff.h"
@@ -16,11 +17,12 @@
 #include "Bboxes.h"
 #include "FileManagement.h"
 #include "Model.h"
+#include "Performance.h"
 
 
 namespace fs = std::filesystem;
 
-class TeeBuffer : public std::streambuf {
+/*class TeeBuffer : public std::streambuf {
 public:
     TeeBuffer(std::streambuf* sb1, std::streambuf* sb2) : sb1_(sb1), sb2_(sb2) {}
 protected:
@@ -38,7 +40,7 @@ protected:
 private:
     std::streambuf* sb1_;
     std::streambuf* sb2_;
-};
+};*/
 
 /*int main(int argc, char** argv) {
     std::ofstream outFile("output.txt");
@@ -212,8 +214,7 @@ int main(int argc, char** argv) {
     std::vector<GroundTruth> gt;
     getDataset(database, gt);
     //std::cout<<"CARICA (credo)"<<std::endl;
-    float mIoU=0;
-    std::vector<SequenceSample> samples;
+    std::vector<SequenceSample> samples(database.size());
     
     for(size_t i=0; i<database.size(); i++){
         std::cout<<"computing video "<<i+1<<std::endl;
@@ -222,7 +223,8 @@ int main(int argc, char** argv) {
         std::vector<cv::Rect> bboxes;
         float H;
         
-        samples[i].frame20=videoG[19]; //19 index = frame 20
+        samples[i].trueLabel=gt[i].class_id;
+        samples[i].frame20=database[i][19]; //19 index = frame 20
         samples[i].seqName="video"+std::to_string(i);
         
         findBoxes(videoG, samples[i], bboxes, H);       //finds bboxes in the video included the one in frame 20
@@ -232,11 +234,9 @@ int main(int argc, char** argv) {
         /*std::cout<<"\nvideo "<<i+1<<"\nbox20 "<<sample.bbox20<<std::endl;
         std::cout<<"grounTruth "<<gt[i].bbox<<std::endl;
         std::cout<<"IoU video "<<i+1<<" : "<<sample.iou<<std::endl;*/
-        mIoU+=samples[i].iou;
-        saveAnnotatedFrame20(samples[i],"prova"); //writes file visualizing bbox and category of frame 20
+        
+        //saveAnnotatedFrame20(samples[i],"prova"); //writes file visualizing bbox and category of frame 20
     }
     DeploySVM(samples);
-
-
-    std::cout<<mIoU/database.size()<<std::endl;
+    EvaluateModel(samples);
 }

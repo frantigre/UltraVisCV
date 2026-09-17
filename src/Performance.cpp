@@ -1,22 +1,23 @@
 #include "Performance.h"
 
-cv::Mat ConfMatrix(std::vector<GroundTruth> real, std::vector<int> predict){
+cv::Mat ConfMatrix(std::vector<SequenceSample> samples){
     cv::Mat matrix = cv::Mat::zeros(6,6,CV_32S); //6 classes by definition
-    for(size_t i=0; i<real.size(); i++){
-        matrix.at<int>(real[i].class_id, predict[i])++;  //they need to be 0-5 so could be needed a -1
+    for(size_t i=0; i<samples.size(); i++){
+        matrix.at<int>(samples[i].trueLabel-1, samples[i].predictedLabel-1)++;  //they need to be 0-5 so could be needed a -1
     }
     return matrix;
 }
 
-float F1Score(std::vector<GroundTruth> real, std::vector<int> predict, int picked_class){
-    cv::Mat matrix = ConfMatrix(real, predict);
-    int TP=matrix.at<int>(picked_class,picked_class);
+float F1Score(cv::Mat matrix, int picked_class){
+    int index=picked_class-1;
+    //std::cout<<matrix.at<int>(index,index)<<std::endl;
+    int TP=matrix.at<int>(index,index);
     if(TP==0) return 0.0f; //no true positive, no need to compute anything + avoid division by 0
-    int FP,FN; //TN not needed for F1
+    int FP=0,FN=0; //TN not needed for F1
     for(int i=0; i<6;i++){ //6 classes by definition
-        if(i!=picked_class){
-        FP+=matrix.at<int>(i,picked_class);
-        FN+=matrix.at<int>(picked_class,i);
+        if(i!=index){
+        FP+=matrix.at<int>(i,index);
+        FN+=matrix.at<int>(index,i);
         }
     }
     float precision=static_cast<float>(TP)/(TP+FP);
@@ -24,9 +25,37 @@ float F1Score(std::vector<GroundTruth> real, std::vector<int> predict, int picke
     return 2*precision*recall/(precision+recall);
 }
 
+void EvaluateModel(std::vector<SequenceSample> samples){
+    std::string output="";
+    cv::Mat confusion = ConfMatrix(samples);
+    //std::cout<<confusion<<std::endl;
+    //to fix
+    //output+=confusion;
+    for(int i=1; i<=6; i++){        //maybe an enum?
+        float F1tmp=F1Score(confusion, i);
+        //std::cout<<"F1 score for class "<<i<<": "<<F1tmp<<std::endl;
+        output+="F1 score for class "+std::to_string(i)+": "+std::to_string(F1tmp)+"\n";
+    }
+    float mIoU=0;
+    int accuracy=0;
+    for(size_t i=0; i<samples.size(); i++){
+        mIoU+=samples[i].iou;
+        saveAnnotatedFrame20(samples[i],"prova"); //writes file visualizing bbox and category of frame 20
+        if((samples[i].trueLabel==samples[i].predictedLabel)&&(samples[i].trueLabel!=-1)){   //second check is in case of some error in reading labels, should never be -1 trueLabel
+            accuracy+=1;
+        }
+    }
+    
+    //std::cout<<"accuracy: "<<static_cast<float>(accuracy)/samples.size()<<std::endl;
+    //std::cout<<"mIoU: "<<mIoU/samples.size()<<std::endl;
+    output+="accuracy: "+std::to_string(static_cast<float>(accuracy)/samples.size())+"\n";
+    output+="mIoU: "+std::to_string(mIoU/samples.size())+"\n";
+    std::cout<<output<<std::endl;       //flush is technically more correct
+}
 
 
-void EvaluateModel() {
+
+/*void EvaluateModel() {
     //TODO: adattare con funzioni di Fra
     for (int r = 1; r <= 6; ++r) {
         std::cout << getActionName(r).substr(0, 4) << "\t";
@@ -77,4 +106,4 @@ void EvaluateModel() {
 
     std::cout << "\nSaved " << samples.size() << " annotated frame-20 images to: "
               << fs::absolute(outImgDir).string() << "\n";
-}
+}*/
