@@ -8,6 +8,6 @@
 #include <cmath>
 
 float computeStrideCadence(const std::vector<float>& signal);
-void extractFeatures (SequenceSample& sample, std::vector<cv::Mat>& grays, std::vector<cv::Rect>& bboxes, float H);
+void extractFeatures (SequenceSample& sample, std::vector<cv::Point2f>& centroids, float H);
 
 #endif

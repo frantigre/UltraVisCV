@@ -1,10 +1,12 @@
 #include "Bboxes.h"
 
 
-void findBoxes(std::vector<cv::Mat> video, SequenceSample& sample, std::vector<cv::Rect>& bboxes, float& H){
+void findBoxes(SequenceSample& sample, std::vector<cv::Point2f>& centroids, float& H){
 
     //NOTE VIDEO IS ALREADY IN GRAYSCALE!!!
-    
+    std::vector<cv::Mat>& video = sample.frames;
+    std::vector<cv::Rect>& bboxes = sample.bboxes;
+
     int imgW = video[0].cols;
     int imgH = video[0].rows;
 
@@ -32,7 +34,6 @@ void findBoxes(std::vector<cv::Mat> video, SequenceSample& sample, std::vector<c
     }
 
     //movement part
-    std::vector<cv::Point2f> centroids;
     std::vector<float> actorHeights;
     
     //std::cout<<"PER FRAME"<<std::endl;
@@ -157,7 +158,6 @@ void findBoxes(std::vector<cv::Mat> video, SequenceSample& sample, std::vector<c
         }
     }
 
-    sample.bbox20=bboxes[19];
     std::sort(actorHeights.begin(), actorHeights.end());        //needed for feature extraction
     H = std::max(30.0f, actorHeights[actorHeights.size() / 2]); // pick median H for scale inv.
     return;    

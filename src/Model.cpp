@@ -92,12 +92,4 @@ void DeploySVM(std::vector<SequenceSample>& samples) {
                   << " | Pred: " << std::left << std::setw(12) << getActionName(samples[i].predictedLabel)
                   << " | IoU (Frame 20): " << std::fixed << std::setprecision(4) << samples[i].iou << "\n";
     }
-    
-    /*std::cout << "\n================ EVALUATION METRICS ================\n";
-    std::cout << "Total Processed: " << samples.size() << " sequences\n";
-    std::cout << "Global Accuracy: " << std::fixed << std::setprecision(2) << (static_cast<double>(correct) / samples.size()) * 100.0 << "%\n";
-    std::cout << "Mean IoU (mIoU): " << std::fixed << std::setprecision(4) << (totalIoU / samples.size()) << "\n\n";
-
-    std::cout << "Confusion Matrix (Rows: Ground Truth, Cols: Predicted):\n";
-    std::cout << "\tWALK\tJOG\tRUN\tBOX\tWAVE\tCLAP\n";*/
 }

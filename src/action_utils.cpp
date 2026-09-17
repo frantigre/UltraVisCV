@@ -72,39 +72,36 @@ std::vector<cv::Mat> toGray(std::vector<cv::Mat> video){
     return grays;
 }
 
-void saveAnnotatedFrame20(SequenceSample sample,std::filesystem::path outDir) { //might not need path
-    //cv::Mat frame = cv::imread(sample.frame20Path); already saves frame20, also it should always be there
-    //if (frame.empty()) return;
-
-    //cv::Rect bbox = sample.bbox20;
-    
+void saveAnnotatedFrame20(const SequenceSample& sample,std::filesystem::path outDir) {
     if (!std::filesystem::exists(outDir)) {
         std::filesystem::create_directories(outDir);
     }
     
+    //revert img from gray to color
+    cv::Mat frame20;
+    cv::cvtColor(sample.frames[19], frame20, cv::COLOR_GRAY2BGR);
+
     std::string labelText = getActionName(sample.predictedLabel);
     //std::cout<<"text: "<<labelText;
     if(labelText=="unknown"){
-        cv::rectangle(sample.frame20, sample.bbox20, cv::Scalar(0, 0, 255), 2);
+        cv::rectangle(frame20, sample.bboxes[19], cv::Scalar(0, 0, 255), 2);
         std::filesystem::path outFile= outDir/(sample.seqName + "_frame20.png");
-        cv::imwrite(outFile.string(), sample.frame20);
+        cv::imwrite(outFile.string(), frame20);
         //std::cout<<" no text"<<std::endl;
     }
     else{
 
-        cv::rectangle(sample.frame20, sample.bbox20, cv::Scalar(0, 0, 255), 2);
+        cv::rectangle(frame20, sample.bboxes[19], cv::Scalar(0, 0, 255), 2);
 
         cv::Point textPos;
-        if (sample.bbox20.x > 80) {
-            textPos=cv::Point(std::max(10, sample.bbox20.x-75), std::max(20, sample.bbox20.y+15));
+        if (sample.bboxes[19].x > 80) {
+            textPos=cv::Point(std::max(10, sample.bboxes[19].x-75), std::max(20, sample.bboxes[19].y+15));
         } else {
-            textPos=cv::Point(std::min(sample.frame20.cols-80, sample.bbox20.x+sample.bbox20.width+5), std::max(20, sample.bbox20.y+15));
+            textPos=cv::Point(std::min(frame20.cols-80, sample.bboxes[19].x+sample.bboxes[19].width+5), std::max(20, sample.bboxes[19].y+15));
         }
 
-        cv::putText(sample.frame20, labelText, textPos, cv::FONT_HERSHEY_SIMPLEX, 0.65, cv::Scalar(0, 0, 255), 2);
-        //std::cout<<" text wrote: "<<labelText<<std::endl;
+        cv::putText(frame20, labelText, textPos, cv::FONT_HERSHEY_SIMPLEX, 0.65, cv::Scalar(0, 0, 255), 2);
         std::filesystem::path outFile=outDir/(sample.seqName + "_frame20.png");
-        cv::imwrite(outFile.string(), sample.frame20);
+        cv::imwrite(outFile.string(), frame20);
     }
 }
-

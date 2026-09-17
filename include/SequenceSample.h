@@ -9,11 +9,9 @@
 class SequenceSample {
     public:
         std::string seqName;
-        //std::string frame20Path; changed to image
-        cv::Mat frame20;
-        cv::Rect bbox20;
+        std::vector<cv::Mat> frames; // all gray frames of sample
+        std::vector<cv::Rect> bboxes;
         std::vector<float> features;
-        float netTranslationX = 0.0f;
         int trueLabel = -1;
         int predictedLabel = -1;
         double iou = 0.0;

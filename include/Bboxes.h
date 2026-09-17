@@ -8,7 +8,7 @@
 #include "SequenceSample.h"
 #include "testHOGdiff.h"
 
-void findBoxes(std::vector<cv::Mat> video, SequenceSample& sample, std::vector<cv::Rect>& bboxes, float& H);
+void findBoxes(SequenceSample& sample, std::vector<cv::Point2f>& centroids, float& H);
 
 
 #endif

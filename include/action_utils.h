@@ -39,6 +39,6 @@ struct GroundTruth {
 double computeIoU(const cv::Rect& a, const cv::Rect& b);
 bool loadGroundTruth(const std::string& path, GroundTruth& gt);
 std::vector<cv::Mat> toGray(std::vector<cv::Mat> video);
-void saveAnnotatedFrame20(SequenceSample sample, std::filesystem::path outDir="outputImg");
+void saveAnnotatedFrame20(const SequenceSample& sample, std::filesystem::path outDir="outputImg");
 
 #endif // ACTION_UTILS_HPP

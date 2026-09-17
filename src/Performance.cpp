@@ -1,5 +1,16 @@
 #include "Performance.h"
 
+// center the text given the width
+std::string centerText(const std::string& text, int width) {
+    if (text.length() >= static_cast<size_t>(width)) {
+        return text;
+    }
+    int padding = width - text.length();
+    int padLeft = padding / 2;
+    int padRight = padding - padLeft;
+    return std::string(padLeft, ' ') + text + std::string(padRight, ' ');
+}
+
 cv::Mat ConfMatrix(std::vector<SequenceSample> samples){
     cv::Mat matrix = cv::Mat::zeros(6,6,CV_32S); //6 classes by definition
     for(size_t i=0; i<samples.size(); i++){
@@ -30,20 +41,25 @@ void EvaluateModel(std::vector<SequenceSample> samples){
     cv::Mat confusion = ConfMatrix(samples);
     output+="Confusion Matrix (Rows: Ground Truth, Cols: Predicted):\n";
     std::vector<std::string> types = {"boxing", "handclapping", "handwaving", "running", "jogging", "walking" };
-    output+=std::format("{:^14}", "");
-    //std::cout<<confusion<<std::endl;
+    
+    // Using the custom helper function instead of std::format
+    output += centerText("", 14);
+    
     for(size_t i=0; i<types.size(); i++){
-        output+=std::format("{:^14}", types[i]);
+        output += centerText(types[i], 14);
     }
     output+="\n";
+    
     for(int i=0; i<confusion.rows; i++){
-        output+=std::format("{:^14}", types[i]);
+        output += centerText(types[i], 14);
         for(int j=0; j<confusion.cols; j++){
-            output+=std::format("{:^14}",confusion.at<int>(i,j));
+            // Convert integer to string before passing to centerText
+            output += centerText(std::to_string(confusion.at<int>(i,j)), 14);
         }
         output+="\n";
     }
     output+="\n";
+    
     for(size_t i=0; i<types.size(); i++){        
         float F1tmp=F1Score(confusion, i+1);
         output+="F1 score for class "+types[i]+": "+std::to_string(F1tmp)+"\n";
@@ -59,7 +75,7 @@ void EvaluateModel(std::vector<SequenceSample> samples){
         }
     }
     
-    output+="accuracy: "+std::to_string(static_cast<float>(accuracy)/samples.size())+"\n";
+    output+="global accuracy: "+std::to_string(static_cast<float>(accuracy)/samples.size())+"\n";
     output+="mIoU: "+std::to_string(mIoU/samples.size())+"\n";
     std::cout<<output<<std::endl;       //flush is technically more correct
     std::ofstream file("output/Metrics.txt");     //the directory is created by saveAnnotatedFrame20 if it doesn't exist
@@ -68,58 +84,3 @@ void EvaluateModel(std::vector<SequenceSample> samples){
         file.close();
     }
 }
-
-
-
-/*void EvaluateModel() {
-    //TODO: adattare con funzioni di Fra
-    for (int r = 1; r <= 6; ++r) {
-        std::cout << getActionName(r).substr(0, 4) << "\t";
-
-        for (int c = 1; c <= 6; ++c) {
-            std::cout << ConfMatrix[r][c] << "\t";
-        }
-
-        std::cout << "\n";
-    }
-
-    std::cout << "\nPer-Class Detailed Performance:\n";
-    std::cout << std::left << std::setw(14) << "Class"
-              << std::setw(12) << "Precision"
-              << std::setw(12) << "Recall"
-              << std::setw(12) << "F1-Score" << "\n";
-    std::cout << "--------------------------------------------------\n";
-
-    double macroF1 = 0.0;
-
-    for (int c = 1; c <= 6; ++c) {
-        int tp = ConfMatrix[c][c];
-        int fn = 0;
-        int fp = 0;
-
-        for (int j = 1; j <= 6; ++j) {
-            if (j != c) {
-                fn += ConfMatrix[c][j];
-                fp += ConfMatrix[j][c];
-            }
-        }
-
-        double precision = (tp + fp > 0) ? static_cast<double>(tp) / (tp + fp) : 0.0;
-        double recall = (tp + fn > 0) ? static_cast<double>(tp) / (tp + fn) : 0.0;
-        double f1 = (precision + recall > 1e-6) ? 2.0 * (precision * recall) / (precision + recall) : 0.0;
-
-        macroF1 += f1;
-
-        std::cout << std::left << std::setw(14) << getActionName(c)
-                  << std::fixed << std::setprecision(4)
-                  << std::setw(12) << precision
-                  << std::setw(12) << recall
-                  << std::setw(12) << f1 << "\n";
-    }
-
-    std::cout << "--------------------------------------------------\n";
-    std::cout << "Macro Average F1-Score: " << std::fixed << std::setprecision(4) << (macroF1 / 6.0) << "\n";
-
-    std::cout << "\nSaved " << samples.size() << " annotated frame-20 images to: "
-              << fs::absolute(outImgDir).string() << "\n";
-}*/

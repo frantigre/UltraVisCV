@@ -11,10 +11,10 @@ float computeFrameCrossings(const std::vector<float>& widths) { //crossings*fram
             crossings++; // count every time we cross the average bbox width
         }
     }
-    return static_cast<float>(crossings / widths.size());
+    return static_cast<float>(crossings) / static_cast<float>(widths.size());
 }
 
-void extractFeatures(SequenceSample& sample, std::vector<cv::Mat>& grays, std::vector<cv::Rect>& bboxes, float H){
+void extractFeatures(SequenceSample& sample, std::vector<cv::Point2f>& centroids, float H){
     double totalOverheadEnergy = 0;
     double totalChestMy = 0;
     double totalChestMx = 0;
@@ -29,22 +29,19 @@ void extractFeatures(SequenceSample& sample, std::vector<cv::Mat>& grays, std::v
 
     std::vector<float> wholeBodyKineticEnergies; // array of "quantity" of movement in bbox in each frame
     std::vector<float> widths; // all bboxes widths
-    std::vector<cv::Point2f> centroids;
 
     // fills arrays that we will need for future features
-    widths.push_back(static_cast<float>(bboxes[0].width));
-    centroids.push_back(cv::Point2f(bboxes[0].x + bboxes[0].width / 2.0f, bboxes[0].y + bboxes[0].height / 2.0f));
+    widths.push_back(static_cast<float>(sample.bboxes[0].width));
 
-    for (int i = 1; i < grays.size(); ++i) {
+    for (int i = 1; i < sample.frames.size(); ++i) {
         cv::Mat flow;
         // compute opticalflow, standard params except reduced winsize 15 -> 10 for detecting localized movements gives better results
-        cv::calcOpticalFlowFarneback(grays[i - 1], grays[i], flow, 0.5, 3, 10, 3, 5, 1.2, 0);
+        cv::calcOpticalFlowFarneback(sample.frames[i - 1], sample.frames[i], flow, 0.5, 3, 10, 3, 5, 1.2, 0);
 
-        cv::Rect curBBox = bboxes[i]; // update bbox
+        cv::Rect curBBox = sample.bboxes[i]; // update bbox
 
         // fills arrays that we will need for future features
         widths.push_back(static_cast<float>(curBBox.width));
-        centroids.push_back(cv::Point2f(curBBox.x + curBBox.width / 2.0f, curBBox.y + curBBox.height / 2.0f));
 
         if (curBBox.width > maxUpperWidth) 
             maxUpperWidth = curBBox.width; // save max box width as feature
