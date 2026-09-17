@@ -28,29 +28,45 @@ float F1Score(cv::Mat matrix, int picked_class){
 void EvaluateModel(std::vector<SequenceSample> samples){
     std::string output="";
     cv::Mat confusion = ConfMatrix(samples);
+    output+="Confusion Matrix (Rows: Ground Truth, Cols: Predicted):\n";
+    std::vector<std::string> types = {"boxing", "handclapping", "handwaving", "running", "jogging", "walking" };
+    output+=std::format("{:^14}", "");
     //std::cout<<confusion<<std::endl;
-    //to fix
-    //output+=confusion;
-    for(int i=1; i<=6; i++){        //maybe an enum?
-        float F1tmp=F1Score(confusion, i);
-        //std::cout<<"F1 score for class "<<i<<": "<<F1tmp<<std::endl;
-        output+="F1 score for class "+std::to_string(i)+": "+std::to_string(F1tmp)+"\n";
+    for(size_t i=0; i<types.size(); i++){
+        output+=std::format("{:^14}", types[i]);
     }
+    output+="\n";
+    for(int i=0; i<confusion.rows; i++){
+        output+=std::format("{:^14}", types[i]);
+        for(int j=0; j<confusion.cols; j++){
+            output+=std::format("{:^14}",confusion.at<int>(i,j));
+        }
+        output+="\n";
+    }
+    output+="\n";
+    for(size_t i=0; i<types.size(); i++){        
+        float F1tmp=F1Score(confusion, i+1);
+        output+="F1 score for class "+types[i]+": "+std::to_string(F1tmp)+"\n";
+    }
+    output+="\n";
     float mIoU=0;
     int accuracy=0;
     for(size_t i=0; i<samples.size(); i++){
         mIoU+=samples[i].iou;
-        saveAnnotatedFrame20(samples[i],"prova"); //writes file visualizing bbox and category of frame 20
+        saveAnnotatedFrame20(samples[i],"output"); //writes file visualizing bbox and category of frame 20
         if((samples[i].trueLabel==samples[i].predictedLabel)&&(samples[i].trueLabel!=-1)){   //second check is in case of some error in reading labels, should never be -1 trueLabel
             accuracy+=1;
         }
     }
     
-    //std::cout<<"accuracy: "<<static_cast<float>(accuracy)/samples.size()<<std::endl;
-    //std::cout<<"mIoU: "<<mIoU/samples.size()<<std::endl;
     output+="accuracy: "+std::to_string(static_cast<float>(accuracy)/samples.size())+"\n";
     output+="mIoU: "+std::to_string(mIoU/samples.size())+"\n";
     std::cout<<output<<std::endl;       //flush is technically more correct
+    std::ofstream file("output/Metrics.txt");     //the directory is created by saveAnnotatedFrame20 if it doesn't exist
+    if(file.is_open()){
+        file<<output;
+        file.close();
+    }
 }
 
 
