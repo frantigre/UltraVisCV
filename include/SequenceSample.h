@@ -9,7 +9,8 @@
 class SequenceSample {
     public:
         std::string seqName;
-        std::string frame20Path;
+        //std::string frame20Path; changed to image
+        cv::Mat frame20;
         cv::Rect bbox20;
         std::vector<float> features;
         float netTranslationX = 0.0f;

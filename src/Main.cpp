@@ -13,13 +13,13 @@
 #include "FeatureExtractor.h"
 #include "testHOGdiff.h"
 #include "action_utils.h"
-#include "Model.h"
+#include "Bboxes.h"
+#include "FileManagement.h"
+
 
 namespace fs = std::filesystem;
 
-bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
-    //SOSTITUITO DA FILEMANAGEMENT DI FRA IN FUNZIONE SEPARATA RICHIAMATA DAL MAIN 
-    //INIZIO
+/*bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {      //da rimuovere
     sample.seqName = seqDir.filename().string();
     sample.trueLabel = getActionIdFromName(sample.seqName);
     if (sample.trueLabel == -1) {
@@ -112,7 +112,7 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
         cv::absdiff(grays[i], grays[prevI], diff1);
         cv::absdiff(grays[i], grays[succI], diff2);
         cv::bitwise_and(diff1, diff2, motionMask);                          //forse da girare se il senso è tenere solo dove c'è stato il movimento sia prima che dopo
-        cv::threshold(motionMask, motionMask, 10, 255, cv::THRESH_BINARY);*/
+        cv::threshold(motionMask, motionMask, 10, 255, cv::THRESH_BINARY);
         
         cv::morphologyEx(motionMask, motionMask, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 15)));
 
@@ -145,7 +145,7 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
                     }
                 }
                 double proxXFactor = Gaussian(proximityX, -30, -10, 10, 30); //guassian with plateau withing -10, 10 (pixels of movement)
-                double proxYFactor = Gaussian(proximityX, -20, -5, 5, 20); //guassian with plateau withing -5, 5 (")
+                double proxYFactor = Gaussian(proximityY, -20, -5, 5, 20); //guassian with plateau withing -5, 5 (")
                 double simFactor = Gaussian(similarityW, 0.16, 0.5, 2, 6)*Gaussian(similarityH, 0.25, 0.66, 1.66, 4);    //box in new frame should be around same size as prevoius
                 double ARFactor = Gaussian(static_cast<double>(proposal.width)/proposal.height,0.07,0.17,0.75,1.5);                  //median aspect ratio of human should be around 1:3, 1:4 when still
                 //double score = (area+proximityX*proxXFactor+proximityY*proxYFactor)*simFactor*ARFactor;
@@ -170,7 +170,7 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
                 if (score < bestScoreB) {
                     bestScoreB = score;
                     curBox = tmp;
-                }*/
+                }
             }
         }
         
@@ -226,7 +226,7 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
             cv::rectangle(debug, curEdge, cv::Scalar(255,0,0),2);
             cv::imshow("two boxes", debug);
             //cv::waitKey(0);
-        }*/
+        }
         
         if (curBox.area()>0) {
             
@@ -235,7 +235,7 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
             if (safeBox.area() > 0) {
                 int movingPixels = cv::countNonZero(motionMask(safeBox));
                 density = static_cast<float>(movingPixels) / safeBox.area();
-            }*/
+            }
             
             if (curBox.height<personZoneVideo.height*0.7) { //expands vertically
                 int newH=personZoneVideo.height;
@@ -254,7 +254,7 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
                 
                 /*int cx = curBox.x + curBox.width / 2;
                 curBox.x = std::max(0, cx - minW / 2);      //BEFORE
-                curBox.width = std::min(imgW - curBox.x, minW);*/
+                curBox.width = std::min(imgW - curBox.x, minW);
             }
             bboxes.push_back(curBox);
             centroids.push_back(cv::Point2f(curBox.x+curBox.width/2.0f, curBox.y+curBox.height/2.0f));   //saves found bbox
@@ -269,7 +269,8 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
             actorHeights.push_back(static_cast<double>(personZoneVideo.height));
         }
     }
-    sample.bbox20 = bboxes[19];
+    //std::cout<<"END MY PART for now"<<std::endl;
+    sample.bbox20=bboxes[19];
 
     std::sort(actorHeights.begin(), actorHeights.end());
 
@@ -280,9 +281,13 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
     // 5-Frame Temporal Rolling Centroid Anchor around Frame 20 for stable mIoU
     
 
+        //SAMU FUNCTION
+            
     extractFeatures(sample, grays, bboxes, H);
-
-    //estrazione IOU: DA VEDERE
+        
+        
+        //it's just IoU
+        
     if (hasGT && grays.size() >= 20) {
         int W = imgW;
         int imgH_ref = imgH;
@@ -301,10 +306,9 @@ bool extractSequenceFeatures(const fs::path& seqDir, SequenceSample& sample) {
         sample.iou = 0.0;
     }
     return true;
-}
+}*/
 
-//FRA
-void saveAnnotatedFrame20(const SequenceSample& sample, const fs::path& outDir) {
+/*void saveAnnotatedFrame20(const SequenceSample& sample, const fs::path& outDir) {
     cv::Mat frame = cv::imread(sample.frame20Path);
     if (frame.empty()) return;
 
@@ -324,7 +328,7 @@ void saveAnnotatedFrame20(const SequenceSample& sample, const fs::path& outDir) 
 
     fs::path outFile = outDir / (sample.seqName + "_frame20.png");
     cv::imwrite(outFile.string(), frame);
-}
+}*/
 
 class TeeBuffer : public std::streambuf {
 public:
@@ -346,7 +350,7 @@ private:
     std::streambuf* sb2_;
 };
 
-int main(int argc, char** argv) {
+/*int main(int argc, char** argv) {
     std::ofstream outFile("output.txt");
     std::streambuf* origCoutBuf = std::cout.rdbuf();
     std::unique_ptr<TeeBuffer> tee;
@@ -391,5 +395,153 @@ int main(int argc, char** argv) {
     model.DeploySVM(samples);
     model.EvaluateModel();
 
+        for (int j = 0; j < N; ++j) {
+            if (i == j) continue;
+            for (int f = 0; f < numFeats; ++f) mean[f] += samples[j].features[f];
+        }
+        for (int f = 0; f < numFeats; ++f) mean[f] /= (N - 1);
+
+        for (int j = 0; j < N; ++j) {
+            if (i == j) continue;
+            for (int f = 0; f < numFeats; ++f) {
+                float diff = samples[j].features[f] - mean[f];
+                stddev[f] += diff * diff;
+            }
+        }
+        for (int f = 0; f < numFeats; ++f) {
+            stddev[f] = std::sqrt(stddev[f] / (N - 1));
+            if (stddev[f] < 1e-6f) stddev[f] = 1.0f;
+        }
+
+        cv::Mat trainData(N - 1, numFeats, CV_32F);
+        cv::Mat trainLabels(N - 1, 1, CV_32S);
+
+        int trainIdx = 0;
+        for (int j = 0; j < N; ++j) {
+            if (i == j) continue;
+            for (int f = 0; f < numFeats; ++f) {
+                trainData.at<float>(trainIdx, f) = (samples[j].features[f] - mean[f]) / stddev[f];
+            }
+            trainLabels.at<int>(trainIdx, 0) = samples[j].trueLabel;
+            trainIdx++;
+        }
+
+        // Automatic RBF SVM Cross-Validation Grid Search
+        cv::Ptr<cv::ml::SVM> svm = cv::ml::SVM::create();
+        svm->setType(cv::ml::SVM::C_SVC);
+        svm->setKernel(cv::ml::SVM::RBF);
+        svm->setTermCriteria(cv::TermCriteria(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 2500, 1e-6));
+
+        svm->trainAuto(trainData, cv::ml::ROW_SAMPLE, trainLabels, 5);
+
+        cv::Mat testSample(1, numFeats, CV_32F);
+        for (int f = 0; f < numFeats; ++f) {
+            testSample.at<float>(0, f) = (samples[i].features[f] - mean[f]) / stddev[f];
+        }
+
+        int pred = static_cast<int>(svm->predict(testSample));
+
+        // Macro-Kinetic Physical Guardrails using Net Endpoint Drift
+        float netTraverse = samples[i].netTranslationX;
+        bool isStationaryPrediction = (pred == BOXING || pred == HANDWAVING || pred == HANDCLAPPING);
+        bool isLocomotionPrediction = (pred == WALKING || pred == JOGGING || pred == RUNNING);
+
+        samples[i].predictedLabel = pred;
+        int trueLabel = samples[i].trueLabel;
+
+        confusionMatrix[trueLabel][samples[i].predictedLabel]++;
+        if (samples[i].predictedLabel == trueLabel) correct++;
+        totalIoU += samples[i].iou;
+
+        saveAnnotatedFrame20(samples[i], outImgDir);
+
+        std::cout << "Seq: " << samples[i].seqName
+                  << " | True: " << std::left << std::setw(12) << getActionName(trueLabel)
+                  << " | Pred: " << std::left << std::setw(12) << getActionName(samples[i].predictedLabel)
+                  << " | IoU (Frame 20): " << std::fixed << std::setprecision(4) << samples[i].iou << "\n";
+    }
+
+    std::cout << "\n================ EVALUATION METRICS ================\n";
+    std::cout << "Total Processed: " << N << " sequences\n";
+    std::cout << "Global Accuracy: " << std::fixed << std::setprecision(2) << (static_cast<double>(correct) / N) * 100.0 << "%\n";
+    std::cout << "Mean IoU (mIoU): " << std::fixed << std::setprecision(4) << (totalIoU / N) << "\n\n";
+
+    std::cout << "Confusion Matrix (Rows: Ground Truth, Cols: Predicted):\n";
+    std::cout << "\tWALK\tJOG\tRUN\tBOX\tWAVE\tCLAP\n";
+    for (int r = 1; r <= 6; ++r) {
+        std::cout << getActionName(r).substr(0, 4) << "\t";
+        for (int c = 1; c <= 6; ++c) {
+            std::cout << confusionMatrix[r][c] << "\t";
+        }
+        std::cout << "\n";
+    }
+
+    std::cout << "\nPer-Class Detailed Performance:\n";
+    std::cout << std::left << std::setw(14) << "Class" 
+              << std::setw(12) << "Precision" 
+              << std::setw(12) << "Recall" 
+              << std::setw(12) << "F1-Score" << "\n";
+    std::cout << "--------------------------------------------------\n";
+
+    double macroF1 = 0.0;
+    for (int c = 1; c <= 6; ++c) {
+        int tp = confusionMatrix[c][c];
+        int fn = 0;
+        int fp = 0;
+
+        for (int j = 1; j <= 6; ++j) {
+            if (j != c) {
+                fn += confusionMatrix[c][j];
+                fp += confusionMatrix[j][c];
+            }
+        }
+
+        double precision = (tp + fp > 0) ? static_cast<double>(tp) / (tp + fp) : 0.0;
+        double recall    = (tp + fn > 0) ? static_cast<double>(tp) / (tp + fn) : 0.0;
+        double f1        = (precision + recall > 1e-6) ? 2.0 * (precision * recall) / (precision + recall) : 0.0;
+        macroF1 += f1;
+
+        std::cout << std::left << std::setw(14) << getActionName(c)
+                  << std::fixed << std::setprecision(4)
+                  << std::setw(12) << precision
+                  << std::setw(12) << recall
+                  << std::setw(12) << f1 << "\n";
+    }
+    std::cout << "--------------------------------------------------\n";
+    std::cout << "Macro Average F1-Score: " << std::fixed << std::setprecision(4) << (macroF1 / 6.0) << "\n";
+
+    std::cout << "\nSaved " << N << " annotated frame-20 images to: " << fs::absolute(outImgDir).string() << "\n";
+
+    std::cout.rdbuf(origCoutBuf);
     return 0;
+}*/
+int main(int argc, char** argv) {
+    std::vector<std::vector<cv::Mat>> database;
+    std::vector<std::vector<cv::Mat>> DBGray; //might not be needed
+    std::vector<GroundTruth> gt;
+    getDataset(database, gt);
+    //std::cout<<"CARICA (credo)"<<std::endl;
+    float mIoU=0;
+    for(size_t i=0; i<database.size(); i++){
+        std::cout<<"computing video "<<i+1<<std::endl;
+        //DBGray.push_back(toGray(database[i])); not necessary probably
+        std::vector<cv::Mat> videoG=toGray(database[i]);
+        SequenceSample sample;
+        std::vector<cv::Rect> bboxes;
+        float H;
+        
+        sample.frame20=videoG[19]; //19 index = frame 20
+        sample.seqName="video"+std::to_string(i);
+        
+        findBoxes(videoG, sample, bboxes, H);       //finds bboxes in the video included the one in frame 20
+        extractFeatures(sample, videoG, bboxes, H); //extract features for classification
+        
+        sample.iou = computeIoU(sample.bbox20, gt[i].bbox);     
+        /*std::cout<<"\nvideo "<<i+1<<"\nbox20 "<<sample.bbox20<<std::endl;
+        std::cout<<"grounTruth "<<gt[i].bbox<<std::endl;
+        std::cout<<"IoU video "<<i+1<<" : "<<sample.iou<<std::endl;*/
+        mIoU+=sample.iou;
+        saveAnnotatedFrame20(sample,"prova"); //writes file visualizing bbox and category of frame 20
+    }
+    std::cout<<mIoU/database.size()<<std::endl;
 }

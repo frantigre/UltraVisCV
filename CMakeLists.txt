@@ -13,5 +13,5 @@ add_executable(${PROJECT_NAME}
         src/Performance.cpp
 		src/FeatureExtractor.cpp
         src/action_utils.cpp
-        src/Model.cpp)
+        src/Bboxes.cpp)
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})

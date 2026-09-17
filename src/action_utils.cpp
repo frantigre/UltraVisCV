@@ -35,6 +35,14 @@ int getActionIdFromName(const std::string& name) {
     return -1;
 }
 
+GroundTruth::GroundTruth()=default;
+
+GroundTruth::GroundTruth(float l, float xCent, float yCent, float width, float height){
+    class_id=l;
+    bbox = cv::Rect(xCent-width/2,yCent-height/2,width,height);
+}
+
+
 double computeIoU(const cv::Rect& a, const cv::Rect& b) {
     int x1 = std::max(a.x, b.x);
     int y1 = std::max(a.y, b.y);
@@ -47,9 +55,54 @@ double computeIoU(const cv::Rect& a, const cv::Rect& b) {
     return (unionArea <= 0) ? 0.0 : static_cast<double>(interArea) / unionArea;
 }
 
-bool loadGroundTruth(const std::string& path, GroundTruth& gt) {
+bool loadGroundTruth(const std::string& path, GroundTruth& gt) {        //abbastanza sicuro non serva
     std::ifstream file(path);
     if (!file.is_open()) return false;
     file >> gt.class_id >> gt.bbox.x >> gt.bbox.y >> gt.bbox.width >> gt.bbox.height;
     return true;
 }
+
+
+std::vector<cv::Mat> toGray(std::vector<cv::Mat> video){
+
+    std::vector<cv::Mat> grays(video.size());
+    for (size_t i=0; i<video.size(); ++i) {
+        cv::cvtColor(video[i], grays[i], cv::COLOR_BGR2GRAY);
+    }
+    return grays;
+}
+
+void saveAnnotatedFrame20(SequenceSample sample,std::filesystem::path outDir) { //might not need path
+    //cv::Mat frame = cv::imread(sample.frame20Path); already saves frame20, also it should always be there
+    //if (frame.empty()) return;
+
+    //cv::Rect bbox = sample.bbox20;
+    
+    if (!std::filesystem::exists(outDir)) {
+        std::filesystem::create_directories(outDir);
+    }
+    
+    std::string labelText = getActionName(sample.predictedLabel);
+    if(labelText!="unknown"){
+        cv::rectangle(sample.frame20, sample.bbox20, cv::Scalar(0, 0, 255), 2);
+        std::filesystem::path outFile = outDir / (sample.seqName + "_frame20.png");
+        cv::imwrite(outFile.string(), sample.frame20);
+    }
+    else{
+
+        cv::rectangle(sample.frame20, sample.bbox20, cv::Scalar(0, 0, 255), 2);
+
+        cv::Point textPos;
+        if (sample.bbox20.x > 80) {
+            textPos = cv::Point(std::max(10, sample.bbox20.x - 75), std::max(20, sample.bbox20.y + 15));
+        } else {
+            textPos = cv::Point(std::min(sample.frame20.cols - 80, sample.bbox20.x + sample.bbox20.width + 5), std::max(20, sample.bbox20.y + 15));
+        }
+
+        cv::putText(sample.frame20, labelText, textPos, cv::FONT_HERSHEY_SIMPLEX, 0.65, cv::Scalar(0, 0, 255), 2);
+
+        std::filesystem::path outFile = outDir / (sample.seqName + "_frame20.png");
+        cv::imwrite(outFile.string(), sample.frame20);
+    }
+}
+
