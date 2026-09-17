@@ -4,16 +4,6 @@
 #include <vector>
 #include "SequenceSample.h"
 
-class ModelEvaluator {
-public:
-    void DeploySVM(std::vector<SequenceSample>& samples);
-    void EvaluateModel();
-
-private:
-    int numFeats;
-    int correct;
-    double totalIoU;
-    int confusionMatrix[7][7];
-};
+void DeploySVM(std::vector<SequenceSample>& samples);
 
 #endif
