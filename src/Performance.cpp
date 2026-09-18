@@ -1,7 +1,7 @@
 #include "Performance.h"
 
 // center the text given the width
-std::string centerText(const std::string& text, int width) {
+std::string centerText(std::string text, int width) {
     if (text.length() >= static_cast<size_t>(width)) {
         return text;
     }

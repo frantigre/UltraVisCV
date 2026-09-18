@@ -1,19 +1,21 @@
 #include "FileManagement.h"
 
 
-void getDataset(std::vector<std::vector<cv::Mat>>& data, std::vector<GroundTruth>& labels){
-    std::string root = "../UltraVisCV/dataset/Sequences";
+void getDataset(std::vector<std::vector<cv::Mat>>& data, std::vector<GroundTruth>& labels, std::vector<std::string>& sampleName){
+    std::string root = "../dataset/Sequences";
     std::vector<std::string> types = {"boxing", "handclapping", "handwaving", "running", "jogging", "walking" };
     for(size_t i=0; i<types.size(); i++){
         std::string typePath = root+"/"+types[i];
         for (std::filesystem::directory_entry sample : std::filesystem::directory_iterator(typePath)){
-            std::cout<<sample<<std::endl;
             if(sample.is_directory()){
+                std::string name=sample.path().filename().string();
+                std::cout<<"extracting data from "<<name<<std::endl;
                 std::vector<cv::Mat> sampleData;
                 GroundTruth sampleLabels;
                 getSequence(sample.path().string(), sampleData, sampleLabels);
                 data.push_back(sampleData);
                 labels.push_back(sampleLabels);
+                sampleName.push_back(name);
             }
         }
     }

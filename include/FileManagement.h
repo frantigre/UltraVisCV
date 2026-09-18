@@ -8,7 +8,7 @@
 #include <filesystem>
 #include "action_utils.h"
 
-void getDataset (std::vector<std::vector<cv::Mat>>& data, std::vector<GroundTruth>& labels);
+void getDataset (std::vector<std::vector<cv::Mat>>& data, std::vector<GroundTruth>& labels, std::vector<std::string>& sampleName);
 void getSequence (std::string path, std::vector<cv::Mat>& data, GroundTruth& labels);
 
 #endif

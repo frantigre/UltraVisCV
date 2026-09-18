@@ -4,8 +4,6 @@ namespace fs = std::filesystem;
 
 void DeploySVM(std::vector<SequenceSample>& samples) {
     int numFeats = static_cast<int>(samples[0].features.size());
-    /*float totalIoU = 0.0;
-    int confusionMatrix[7][7] = {0};*/
 
     //train with leave-one-out cross-validation
     for (int i = 0; i < samples.size(); ++i) {
@@ -71,9 +69,6 @@ void DeploySVM(std::vector<SequenceSample>& samples) {
         int pred = static_cast<int>(svm->predict(testSample)); //svm label prediction for the test sample
         samples[i].predictedLabel = pred;
         int trueLabel = samples[i].trueLabel;
-
-        //confusionMatrix[trueLabel][samples[i].predictedLabel]++;
-        //totalIoU += samples[i].iou;
 
         //print iou of 20th frame and true vs predicted label of each video
         std::cout << "Seq: " << samples[i].seqName
