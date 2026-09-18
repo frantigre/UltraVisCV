@@ -82,12 +82,12 @@ void saveAnnotatedFrame20(const SequenceSample& sample,std::filesystem::path out
         cv::rectangle(frame20, sample.bboxes[19], cv::Scalar(0, 0, 255), 2);
         cv::Point textPos;
 
-        if (sample.bboxes[19].x > 80)
-            textPos=cv::Point(std::max(10, sample.bboxes[19].x-75), std::max(20, sample.bboxes[19].y+15)); //place text to the left of the bbox if there's enough space
+        if (sample.bboxes[19].x > 70)
+            textPos=cv::Point(std::max(7, sample.bboxes[19].x-55), std::max(20, sample.bboxes[19].y+15)); //place text to the left of the bbox if there's enough space
         else
-            textPos=cv::Point(std::min(frame20.cols-80, sample.bboxes[19].x+sample.bboxes[19].width+5), std::max(20, sample.bboxes[19].y+15)); //else place it to its right
+            textPos=cv::Point(std::min(frame20.cols-60, sample.bboxes[19].x+sample.bboxes[19].width+5), std::max(20, sample.bboxes[19].y+15)); //else place it to its right
 
-        cv::putText(frame20, labelText, textPos, cv::FONT_HERSHEY_SIMPLEX, 0.65, cv::Scalar(0, 0, 255), 2); //and finally draw the label in red
+        cv::putText(frame20, labelText, textPos, cv::FONT_HERSHEY_SIMPLEX, 0.60, cv::Scalar(0, 0, 255), 2); //and finally draw the label in red
         std::filesystem::path outFile=outDir/(sample.seqName + "_frame20.png");
         cv::imwrite(outFile.string(), frame20);
     }

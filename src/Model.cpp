@@ -4,7 +4,6 @@ namespace fs = std::filesystem;
 
 void DeploySVM(std::vector<SequenceSample>& samples) {
     int numFeats = static_cast<int>(samples[0].features.size());
-    int correct = 0;
     /*float totalIoU = 0.0;
     int confusionMatrix[7][7] = {0};*/
 
@@ -74,11 +73,6 @@ void DeploySVM(std::vector<SequenceSample>& samples) {
         int trueLabel = samples[i].trueLabel;
 
         //confusionMatrix[trueLabel][samples[i].predictedLabel]++;
-
-        //count true positives for accuracy calculation
-        if (samples[i].predictedLabel == trueLabel)
-            correct++;
-        
         //totalIoU += samples[i].iou;
 
         //print iou of 20th frame and true vs predicted label of each video
