@@ -17,14 +17,6 @@
 #include "SequenceSample.h"
 #include "FeatureExtractor.h"
 
-/*enum ActionType {
-    WALKING = 1,
-    JOGGING = 2,
-    RUNNING = 3,
-    BOXING = 4,
-    HANDWAVING = 5,
-    HANDCLAPPING = 6
-};*/ //sbagliato per non so quale motivo
 enum ActionType{
     BOXING=1,
     HANDCLAPPING=2,
@@ -40,7 +32,7 @@ int getActionIdFromName(const std::string& name);
 struct GroundTruth {
     int class_id;
     cv::Rect2d bbox;
-    
+
     GroundTruth();
     GroundTruth(float l, float xCent, float yCent, float width, float height);
 };
