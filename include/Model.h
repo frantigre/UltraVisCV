@@ -13,7 +13,6 @@
 #include <numeric>
 
 #include "action_utils.h"
-#include "testHOGdiff.h"
 #include "SequenceSample.h"
 
 void DeploySVM(std::vector<SequenceSample>& samples);

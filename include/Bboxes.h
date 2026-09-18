@@ -6,7 +6,7 @@
 #include <cmath>
 #include <iostream> //debug, not used in reality
 #include "SequenceSample.h"
-#include "testHOGdiff.h"
+#include "action_utils.h"
 
 void findBoxes(SequenceSample& sample, std::vector<cv::Point2f>& centroids, float& H);
 

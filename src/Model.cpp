@@ -5,20 +5,15 @@ namespace fs = std::filesystem;
 void DeploySVM(std::vector<SequenceSample>& samples) {
     int numFeats = static_cast<int>(samples[0].features.size());
     int correct = 0;
+    /*float totalIoU = 0.0;
+    int confusionMatrix[7][7] = {0};*/
 
-    // vector of shuffledIndexs for random training
-    std::vector<int> shuffledIndexs(samples.size());
-    std::iota(shuffledIndexs.begin(), shuffledIndexs.end(), 0);
-    
-    std::mt19937 mt(50); // fixed seed for repeatibility
-    std::shuffle(shuffledIndexs.begin(), shuffledIndexs.end(), mt);
-
-    // Leave-One-Out Cross-Validation (LOOCV)
+    //train with leave-one-out cross-validation
     for (int i = 0; i < samples.size(); ++i) {
         std::vector<float> mean(numFeats, 0.0f);
         std::vector<float> stddev(numFeats, 0.0f);
 
-        // Order doesn't matter for mathematical sums, so standard iteration is fine here
+        // Compute mean for each feature (except the i-th sample)
         for (int j = 0; j < samples.size(); ++j) {
             if (i == j) continue;
 
@@ -29,6 +24,7 @@ void DeploySVM(std::vector<SequenceSample>& samples) {
         for (int f = 0; f < numFeats; ++f)
             mean[f] /= (samples.size() - 1);
 
+        // Compute stddev for each feature (again, except the i-th sample)
         for (int j = 0; j < samples.size(); ++j) {
             if (i == j) continue;
 
@@ -43,46 +39,49 @@ void DeploySVM(std::vector<SequenceSample>& samples) {
             if (stddev[f] < 1e-6f) stddev[f] = 1.0f;
         }
 
+        //Initialize training data and labels
         cv::Mat trainData(samples.size() - 1, numFeats, CV_32F);
         cv::Mat trainLabels(samples.size() - 1, 1, CV_32S);
 
         int trainIdx = 0;
 
-        // Populate trainData and trainLabels using the SHUFFLED indices
-        for (int j : shuffledIndexs) {
+        for (int j = 0; j < samples.size(); ++j) {
             if (i == j) continue;
 
             for (int f = 0; f < numFeats; ++f) {
-                trainData.at<float>(trainIdx, f) = (samples[j].features[f] - mean[f]) / stddev[f];
+                trainData.at<float>(trainIdx, f) = (samples[j].features[f] - mean[f]) / stddev[f]; //fill trainData with normalized features
             }
 
-            trainLabels.at<int>(trainIdx, 0) = samples[j].trueLabel;
+            trainLabels.at<int>(trainIdx, 0) = samples[j].trueLabel; //fill trainLabels with true labels
             trainIdx++;
         }
-
-        // Automatic RBF SVM Cross-Validation Grid Search
+        
+        //initialize SVM
         cv::Ptr<cv::ml::SVM> svm = cv::ml::SVM::create();
         svm->setType(cv::ml::SVM::C_SVC);
-        svm->setKernel(cv::ml::SVM::RBF);
-        svm->setTermCriteria(cv::TermCriteria(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 2500, 1e-6));
+        svm->setKernel(cv::ml::SVM::RBF); //setup a RBF Kernel 
+        svm->setTermCriteria(cv::TermCriteria(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 2500, 1e-6)); //max iterations and tolerance for convergence
 
-        svm->trainAuto(trainData, cv::ml::ROW_SAMPLE, trainLabels, 5);
-
+        svm->trainAuto(trainData, cv::ml::ROW_SAMPLE, trainLabels, 5); //train svm with auto parameter selection using cross-validation
         cv::Mat testSample(1, numFeats, CV_32F);
 
         for (int f = 0; f < numFeats; ++f) {
-            testSample.at<float>(0, f) = (samples[i].features[f] - mean[f]) / stddev[f];
+            testSample.at<float>(0, f) = (samples[i].features[f] - mean[f]) / stddev[f]; //normalize the features of the test sample
         }
 
-        int pred = static_cast<int>(svm->predict(testSample));
-
-        // The predictions are safely written back to the original struct without shifting its index
+        int pred = static_cast<int>(svm->predict(testSample)); //svm label prediction for the test sample
         samples[i].predictedLabel = pred;
         int trueLabel = samples[i].trueLabel;
 
+        //confusionMatrix[trueLabel][samples[i].predictedLabel]++;
+
+        //count true positives for accuracy calculation
         if (samples[i].predictedLabel == trueLabel)
             correct++;
+        
+        //totalIoU += samples[i].iou;
 
+        //print iou of 20th frame and true vs predicted label of each video
         std::cout << "Seq: " << samples[i].seqName
                   << " | True: " << std::left << std::setw(12) << getActionName(trueLabel)
                   << " | Pred: " << std::left << std::setw(12) << getActionName(samples[i].predictedLabel)

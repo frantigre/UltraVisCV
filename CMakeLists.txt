@@ -8,9 +8,8 @@ include_directories(include ${OpenCV_INCLUDE_DIRS})
 add_executable(${PROJECT_NAME}
         src/Main.cpp
         src/FileManagement.cpp
-        src/testHOGdiff.cpp
         src/Performance.cpp
-	    src/FeatureExtractor.cpp
+	src/FeatureExtractor.cpp
         src/action_utils.cpp
         src/Bboxes.cpp
         src/Model.cpp)

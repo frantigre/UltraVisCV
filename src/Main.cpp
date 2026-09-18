@@ -12,7 +12,6 @@
 
 #include "SequenceSample.h"
 #include "FeatureExtractor.h"
-#include "testHOGdiff.h"
 #include "action_utils.h"
 #include "Bboxes.h"
 #include "FileManagement.h"

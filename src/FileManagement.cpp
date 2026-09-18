@@ -2,7 +2,7 @@
 
 
 void getDataset(std::vector<std::vector<cv::Mat>>& data, std::vector<GroundTruth>& labels){
-    std::string root = "../dataset/Sequences";
+    std::string root = "../UltraVisCV/dataset/Sequences";
     std::vector<std::string> types = {"boxing", "handclapping", "handwaving", "running", "jogging", "walking" };
     for(size_t i=0; i<types.size(); i++){
         std::string typePath = root+"/"+types[i];

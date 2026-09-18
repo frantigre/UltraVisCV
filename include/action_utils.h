@@ -1,12 +1,21 @@
 #ifndef ACTION_UTILS_HPP
 #define ACTION_UTILS_HPP
 
-#include <string>
-#include <vector>
 #include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/objdetect.hpp>
+
+#include <vector>
+#include <algorithm>
+#include <random>
+#include <stdexcept>
+#include <iostream>
+#include <string>
 #include <filesystem>
-#include <iostream> //degug
+#include <fstream>
+
 #include "SequenceSample.h"
+#include "FeatureExtractor.h"
 
 /*enum ActionType {
     WALKING = 1,
@@ -40,5 +49,10 @@ double computeIoU(const cv::Rect& a, const cv::Rect& b);
 bool loadGroundTruth(const std::string& path, GroundTruth& gt);
 std::vector<cv::Mat> toGray(std::vector<cv::Mat> video);
 void saveAnnotatedFrame20(const SequenceSample& sample, std::filesystem::path outDir="outputImg");
+
+cv::Mat difference(cv::Mat prev,cv::Mat succ);
+std::vector<cv::Mat> videoDiff(std::vector<cv::Mat> video);
+cv::Mat MeanOfDifferences(std::vector<cv::Mat> video);
+double Gaussian(double x, double a, double b, double c, double d);
 
 #endif // ACTION_UTILS_HPP
