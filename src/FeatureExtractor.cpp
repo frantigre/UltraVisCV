@@ -129,7 +129,7 @@ void extractFeatures(SequenceSample& sample, std::vector<cv::Point2f>& centroids
 
     // max x movement between frames
     float maxInstantMx = 0.0f;
-    for (size_t i = 1; i < centroids.size(); ++i) {
+    for (int i = 1; i < centroids.size(); ++i) {
         float instMx = std::abs(centroids[i].x - centroids[i - 1].x);
         if (instMx > maxInstantMx) 
             maxInstantMx = instMx;
