@@ -1,3 +1,4 @@
+//Samuele Volpato
 #ifndef FeatureExtractor_H
 #define FeatureExtractor_H
 

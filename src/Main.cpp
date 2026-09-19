@@ -14,11 +14,11 @@
 
 int main(int argc, char** argv) {
     std::vector<std::vector<cv::Mat>> database;
-    std::vector<std::vector<cv::Mat>> DBGray; //might not be needed
     std::vector<GroundTruth> gt;
     std::vector<std::string> names; //saves name of folders containing data
     getDataset(database, gt, names);
     std::vector<SequenceSample> samples(database.size());
+    
     for(size_t i=0; i<database.size(); i++){
         samples[i].seqName=names[i];
         std::cout<<"computing video "<<names[i]<<std::endl;

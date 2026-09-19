@@ -59,7 +59,7 @@ void DeploySVM(std::vector<SequenceSample>& samples) {
         svm->setKernel(cv::ml::SVM::RBF); //setup a RBF Kernel 
         svm->setTermCriteria(cv::TermCriteria(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 2500, 1e-6)); //max iterations and tolerance for convergence
 
-        svm->trainAuto(trainData, cv::ml::ROW_SAMPLE, trainLabels, 5); //train svm with auto parameter selection using cross-validation
+        svm->trainAuto(trainData, cv::ml::ROW_SAMPLE, trainLabels, 10); //train svm with auto parameter selection using cross-validation
         cv::Mat testSample(1, numFeats, CV_32F);
 
         for (int f = 0; f < numFeats; ++f) {

@@ -1,3 +1,4 @@
+//Samuele Volpato
 #include "FeatureExtractor.h"
 
 float computeFrameCrossings(const std::vector<float>& widths) { //crossings*frame
