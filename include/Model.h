@@ -1,3 +1,4 @@
+//Vlad Andries
 #ifndef MODEL_EVALUATOR_H
 #define MODEL_EVALUATOR_H
 

@@ -1,3 +1,4 @@
+// Samuele Volpato
 #ifndef SequenceSample_H
 #define SequenceSample_H
 

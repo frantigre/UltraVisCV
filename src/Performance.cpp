@@ -1,3 +1,4 @@
+//Francesco Ariani
 #include "Performance.h"
 
 // center the text given the width

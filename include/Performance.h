@@ -1,3 +1,4 @@
+//Francesco Ariani
 #include <vector>
 #include <opencv2/core.hpp>
 #include <fstream>
