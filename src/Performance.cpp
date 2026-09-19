@@ -39,6 +39,11 @@ float F1Score(cv::Mat matrix, int picked_class){
 
 void EvaluateModel(std::vector<SequenceSample> samples){
     std::string output="";
+
+    for(size_t i=0; i<samples.size(); i++){
+        output+="Seq: "+samples[i].seqName+", True label: "+getActionName(samples[i].trueLabel)+", Predicted: "+getActionName(samples[i].predictedLabel)+", IoU (frame 20)"+std::to_string(samples[i].iou)+"\n";
+    }
+
     cv::Mat confusion = ConfMatrix(samples);
     output+="Confusion Matrix (Rows: Ground Truth, Cols: Predicted):\n";
     std::vector<std::string> types = {"boxing", "handclapping", "handwaving", "running", "jogging", "walking" };

@@ -69,12 +69,5 @@ void DeploySVM(std::vector<SequenceSample>& samples) {
 
         int pred = static_cast<int>(svm->predict(testSample)); //svm label prediction for the test sample
         samples[i].predictedLabel = pred;
-        int trueLabel = samples[i].trueLabel;
-
-        //print iou of 20th frame and true vs predicted label of each video
-        std::cout << "Seq: " << samples[i].seqName
-                  << " | True: " << std::left << std::setw(12) << getActionName(trueLabel)
-                  << " | Pred: " << std::left << std::setw(12) << getActionName(samples[i].predictedLabel)
-                  << " | IoU (Frame 20): " << std::fixed << std::setprecision(4) << samples[i].iou << "\n";
     }
 }
