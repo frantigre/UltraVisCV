@@ -137,7 +137,7 @@ void extractFeatures(SequenceSample& sample, std::vector<cv::Point2f>& centroids
     float normMaxInstantMx = maxInstantMx / H; // normalize with H
 
     // x displacement
-    float netTranslationX = (centroids.size() > 1) ?
+    float translationX = (centroids.size() > 1) ?
         (std::abs(centroids.back().x - centroids.front().x) / H) : 0.0f;
 
     float kineticP90 = 0.0f; // take kinetic energy at 90% to avoid outliers
@@ -183,7 +183,7 @@ void extractFeatures(SequenceSample& sample, std::vector<cv::Point2f>& centroids
 
     // save features
     sample.features = {
-        netTranslationX,
+        translationX,
         normMaxInstantMx,
         kineticP90,
         kineticBurstRatio,
