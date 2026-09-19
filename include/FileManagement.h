@@ -11,7 +11,7 @@
 #include "action_utils.h"
 
 // load all dataset
-void getDataset (std::vector<std::vector<cv::Mat>>& data, std::vector<GroundTruth>& labels, std::vector<std::string>& sampleNames, std::string root = "../dataset/Sequences");
+void getDataset (std::vector<std::vector<cv::Mat>>& data, std::vector<GroundTruth>& labels, std::vector<std::string>& sampleNames, std::string root = "../KTH_Extracted_Dataset/Sequences");
 // load single sample
 void getSequence (std::string path, std::vector<cv::Mat>& data, GroundTruth& labels);
 
