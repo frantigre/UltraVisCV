@@ -70,13 +70,11 @@ void saveAnnotatedFrame20(const SequenceSample& sample,std::filesystem::path out
     cv::cvtColor(sample.frames[19], frame20, cv::COLOR_GRAY2BGR);
 
     std::string labelText = getActionName(sample.predictedLabel);
-    //std::cout<<"text: "<<labelText;
 
     if(labelText=="unknown"){ //only draw the bbox for unknown actions
         cv::rectangle(frame20, sample.bboxes[19], cv::Scalar(0, 0, 255), 2);
         std::filesystem::path outFile= outDir/(sample.seqName + "_frame20.png");
         cv::imwrite(outFile.string(), frame20);
-        //std::cout<<" no text"<<std::endl;
     }
 
     else{

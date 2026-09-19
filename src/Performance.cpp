@@ -40,10 +40,6 @@ float F1Score(cv::Mat matrix, int picked_class){
 void EvaluateModel(std::vector<SequenceSample> samples){
     std::string output="";
 
-    for(size_t i=0; i<samples.size(); i++){
-        output+="Seq: "+samples[i].seqName+", True label: "+getActionName(samples[i].trueLabel)+", Predicted: "+getActionName(samples[i].predictedLabel)+", IoU (frame 20)"+std::to_string(samples[i].iou)+"\n";
-    }
-
     cv::Mat confusion = ConfMatrix(samples);
     output+="Confusion Matrix (Rows: Ground Truth, Cols: Predicted):\n";
     std::vector<std::string> types = {"boxing", "handclapping", "handwaving", "running", "jogging", "walking" };
@@ -83,6 +79,12 @@ void EvaluateModel(std::vector<SequenceSample> samples){
     
     output+="global accuracy: "+std::to_string(static_cast<float>(accuracy)/samples.size())+"\n";
     output+="mIoU: "+std::to_string(mIoU/samples.size())+"\n";
+
+    output += "\nIoU at frame 20 and labels for every sample in the dataset:\n\n";
+    for(size_t i=0; i<samples.size(); i++){
+        output+="Seq: "+samples[i].seqName+", True label: "+getActionName(samples[i].trueLabel)+", Predicted: "+getActionName(samples[i].predictedLabel)+", IoU: "+std::to_string(samples[i].iou)+"\n";
+    }
+
     std::cout<<output<<std::endl;       //flush is technically more correct
     std::ofstream file("output/Metrics.txt");     //the directory is created by saveAnnotatedFrame20 if it doesn't exist
     if(file.is_open()){
